@@ -1,0 +1,2655 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1280">
+  <title>Novuscampo — Prototipo navegable</title>
+
+  <!-- Google Fonts: Newsreader, DM Sans, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Newsreader:ital,wght@0,400;0,500;0,600;1,400;1,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>/* Novuscampo — design tokens
+   Editorial · sober · llanero. Paper, ink, terracotta. */
+
+:root {
+  /* Surfaces (paper) */
+  --paper: #f4ecdb;
+  --paper-2: #ece1c6;          /* slightly darker; rows, cards */
+  --paper-3: #e2d5b3;          /* deepest cream; section bg */
+  --paper-card: #fbf6ea;       /* lifted card */
+
+  /* Ink */
+  --ink: #1c1814;
+  --ink-1: #3a3127;
+  --ink-2: #6b5f4e;
+  --ink-3: #968a76;
+  --ink-4: #b8ad97;
+
+  /* Hairlines */
+  --rule: #d4c6a4;
+  --rule-soft: #e1d4b3;
+
+  /* Brand */
+  --terra: #8b3a2c;            /* primary accent */
+  --terra-deep: #5e2719;
+  --terra-tint: #d8a99c;
+  --terra-wash: #f3dcd2;
+
+  /* Semantic */
+  --olive: #5a6440;            /* verified, healthy */
+  --olive-wash: #d8dcc1;
+  --amber: #a67220;            /* pending, alert mild */
+  --amber-wash: #f0e1bf;
+  --crimson: #8a2a26;          /* rejected, hard alert */
+  --wa: #1faa56;               /* WhatsApp green – sparingly */
+  --wa-deep: #157a3e;
+
+  /* Type */
+  --serif: "Newsreader", "Source Serif 4", Georgia, serif;
+  --sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+
+  /* Radii — restrained */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+
+/* Dark mode override */
+[data-theme="dark"] {
+  --paper: #1a1612;
+  --paper-2: #221d18;
+  --paper-3: #100c08;
+  --paper-card: #25201a;
+  --ink: #f1e8d3;
+  --ink-1: #d6caaf;
+  --ink-2: #9f927a;
+  --ink-3: #6f6450;
+  --ink-4: #4a4234;
+  --rule: #3a3127;
+  --rule-soft: #2a241d;
+  --terra: #c97a5f;
+  --terra-deep: #e0a18a;
+  --terra-tint: #6e3022;
+  --terra-wash: #3a1d14;
+  --olive: #a4b27e;
+  --olive-wash: #2c3220;
+  --amber: #d4a35a;
+  --amber-wash: #3a2c16;
+  --paper-card: #25201a;
+}
+
+/* Reusable utility classes ----------------------------------- */
+.nc-screen {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-feature-settings: "ss01", "cv11";
+  height: 100%;
+  overflow-y: auto;
+}
+.nc-screen *::-webkit-scrollbar { display: none; }
+.nc-screen * { scrollbar-width: none; }
+
+.nc-h1 { font-family: var(--serif); font-weight: 500; font-size: 32px; line-height: 1.05; letter-spacing: -0.01em; color: var(--ink); }
+.nc-h2 { font-family: var(--serif); font-weight: 500; font-size: 24px; line-height: 1.1; letter-spacing: -0.005em; }
+.nc-h3 { font-family: var(--serif); font-weight: 500; font-size: 18px; line-height: 1.2; }
+.nc-eyebrow {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--ink-2);
+}
+.nc-body { font-family: var(--sans); font-size: 14px; line-height: 1.45; color: var(--ink-1); }
+.nc-meta { font-family: var(--mono); font-size: 11px; color: var(--ink-2); letter-spacing: 0.02em; }
+.nc-num  { font-family: var(--mono); font-feature-settings: "tnum"; }
+
+.nc-rule { height: 1px; background: var(--rule); width: 100%; }
+.nc-rule-soft { height: 1px; background: var(--rule-soft); width: 100%; }
+
+.nc-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 8px; height: 48px; padding: 0 18px;
+  background: var(--ink); color: var(--paper);
+  border: none; cursor: pointer;
+  font-family: var(--sans); font-weight: 500; font-size: 15px;
+  border-radius: var(--r-sm); letter-spacing: 0.01em;
+}
+.nc-btn--terra { background: var(--terra); color: var(--paper); }
+.nc-btn--ghost { background: transparent; color: var(--ink); border: 1px solid var(--rule); }
+.nc-btn--wa { background: var(--wa); color: #fff; }
+
+.nc-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 28px; padding: 0 10px;
+  border-radius: 999px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  font-family: var(--sans); font-size: 12px; color: var(--ink-1);
+  white-space: nowrap;
+}
+.nc-chip--active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.nc-chip--terra { background: var(--terra-wash); color: var(--terra-deep); border-color: var(--terra-tint); }
+.nc-chip--olive { background: var(--olive-wash); color: var(--olive); border-color: var(--olive); }
+.nc-chip--amber { background: var(--amber-wash); color: var(--amber); border-color: var(--amber); }
+
+.nc-tag {
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-2);
+  padding: 3px 6px; border: 1px solid var(--rule);
+  border-radius: var(--r-xs); background: transparent; line-height: 1;
+}
+
+.nc-input {
+  width: 100%; height: 48px;
+  padding: 0 14px;
+  background: var(--paper-card);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-sm);
+  font-family: var(--sans); font-size: 15px; color: var(--ink);
+  box-sizing: border-box;
+}
+.nc-input::placeholder { color: var(--ink-3); }
+
+.nc-label {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--ink-2);
+  display: block; margin-bottom: 6px;
+}
+
+.nc-card {
+  background: var(--paper-card);
+  border: 1px solid var(--rule-soft);
+  border-radius: var(--r-md);
+}
+
+/* Verified ear-tag chip */
+.nc-verified {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--olive);
+  padding: 3px 6px; border: 1px solid var(--olive);
+  border-radius: var(--r-xs); line-height: 1; background: transparent;
+}
+
+/* Newsprint texture for hero backgrounds */
+.nc-newsprint {
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(rgba(28,24,20,0.045) 1px, transparent 1px),
+    radial-gradient(rgba(28,24,20,0.035) 1px, transparent 1px);
+  background-size: 3px 3px, 7px 7px;
+  background-position: 0 0, 2px 2px;
+}
+
+/* Placeholder image — diagonal stripes */
+.nc-ph {
+  background-color: var(--paper-2);
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--paper-2) 0px, var(--paper-2) 6px,
+    var(--paper-3) 6px, var(--paper-3) 7px
+  );
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-3);
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Brand wordmark monogram */
+.nc-mark {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--terra);
+  color: var(--paper);
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 500;
+  border-radius: 2px;
+  letter-spacing: -0.02em;
+}
+.nc-wordmark {
+  font-family: var(--serif);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  font-style: italic;
+}
+</style>
+
+  <style>
+    /* Prototype shell */
+    html, body { margin: 0; padding: 0; min-height: 100vh; background: #f0eee9; font-family: "DM Sans", system-ui, sans-serif; color: #1c1814; }
+    #root { width: 100%; min-height: 100vh; }
+    ::selection { background: rgba(139,58,44,0.22); }
+    button { font-family: inherit; }
+
+    .proto-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+    }
+
+    .proto-nav {
+      background: #1c1814;
+      color: #f4ecdb;
+      padding: 24px 0;
+      position: sticky; top: 0;
+      height: 100vh; overflow-y: auto;
+      border-right: 1px solid rgba(244,236,219,0.12);
+    }
+    .proto-nav-header { padding: 0 22px 18px; border-bottom: 1px solid rgba(244,236,219,0.12); }
+    .proto-nav-mark {
+      width: 26px; height: 20px; background: #8b3a2c; border-radius: 2px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-family: "Newsreader", serif; font-style: italic; font-size: 12px; color: #f4ecdb;
+    }
+    .proto-nav-brand {
+      display: flex; align-items: center; gap: 10px;
+      font-family: "Newsreader", serif; font-style: italic; font-size: 17px;
+    }
+    .proto-nav-sub {
+      margin-top: 6px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 9.5px; color: rgba(244,236,219,0.5); letter-spacing: 0.1em; text-transform: uppercase;
+    }
+    .proto-nav-section {
+      padding: 16px 22px 6px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 9.5px; color: rgba(244,236,219,0.4); letter-spacing: 0.14em; text-transform: uppercase;
+    }
+    .proto-nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 22px;
+      font-family: "DM Sans", sans-serif; font-size: 13.5px;
+      color: rgba(244,236,219,0.7);
+      cursor: pointer;
+      border-left: 2px solid transparent;
+      transition: background 0.1s, color 0.1s, border-color 0.1s;
+    }
+    .proto-nav-item:hover { background: rgba(244,236,219,0.04); color: #f4ecdb; }
+    .proto-nav-item.active {
+      background: rgba(244,236,219,0.08);
+      color: #f4ecdb;
+      border-left-color: #8b3a2c;
+      font-weight: 500;
+    }
+    .proto-nav-item-num {
+      font-family: "JetBrains Mono", monospace; font-size: 10px;
+      color: rgba(244,236,219,0.4); width: 18px;
+    }
+    .proto-nav-item.active .proto-nav-item-num { color: #c97a5f; }
+    .proto-nav-footer {
+      margin-top: 12px; padding: 14px 22px 4px;
+      font-family: "JetBrains Mono", monospace; font-size: 10px;
+      color: rgba(244,236,219,0.4); line-height: 1.5;
+      border-top: 1px solid rgba(244,236,219,0.12);
+    }
+    .proto-nav-footer a { color: #c97a5f; }
+
+    .proto-stage {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 40px 20px;
+      background: #f0eee9;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .proto-stage-header {
+      width: 100%; max-width: 1400px;
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin-bottom: 22px;
+    }
+    .proto-stage-label {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase;
+      color: #6b5f4e;
+    }
+    .proto-stage-title {
+      font-family: "Newsreader", serif; font-style: italic; font-weight: 500;
+      font-size: 22px; color: #1c1814;
+    }
+    .proto-hint {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 10.5px; color: #968a76; letter-spacing: 0.02em;
+    }
+
+    /* Phone frame */
+    .proto-phone {
+      width: 390px; height: 844px;
+      border-radius: 50px;
+      border: 11px solid #18130d;
+      background: #000;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 30px 70px rgba(28,24,20,0.22), 0 0 0 1px rgba(28,24,20,0.15);
+    }
+    .proto-phone::before {
+      content: ""; position: absolute;
+      top: 12px; left: 50%; transform: translateX(-50%);
+      width: 110px; height: 28px;
+      background: #000; border-radius: 16px;
+      z-index: 100;
+    }
+    .proto-phone-inner {
+      width: 100%; height: 100%;
+      position: relative; overflow: hidden;
+      background: var(--paper);
+    }
+
+    /* Desktop frame for admin */
+    .proto-desktop {
+      width: 100%; max-width: 1440px;
+      overflow: auto; border-radius: 8px;
+      box-shadow: 0 30px 70px rgba(28,24,20,0.22), 0 0 0 1px rgba(28,24,20,0.15);
+    }
+
+    /* Hide design tweaks panel from the original — we don't use it */
+    .nc-tweaks-panel { display: none !important; }
+
+    @media (max-width: 900px) {
+      .proto-layout { grid-template-columns: 1fr; }
+      .proto-nav { position: relative; height: auto; }
+      .proto-stage { padding: 20px 10px; }
+      .proto-phone { transform: scale(0.85); transform-origin: top center; }
+    }
+  </style>
+
+  <!-- React + Babel from CDN -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body data-theme="light">
+  <div id="root"></div>
+
+  <!-- Make portrait image available globally -->
+  <script>
+    window.__resources = { llaneroPortrait: 'assets/llanero.jpg' };
+  </script>
+
+  <!-- Shared shell components -->
+  <script type="text/babel">
+// shell.jsx — shared mobile chrome (top bar, bottom tab bar, placeholder photo)
+
+function NCTopBar({ title, subtitle, back = true, action }) {
+  return (
+    <div style={{
+      position: 'sticky', top: 0, zIndex: 5,
+      background: 'var(--paper)',
+      borderBottom: '1px solid var(--rule-soft)',
+      paddingTop: 54, // status bar
+    }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '10px 16px 6px',
+      }}>
+        {back ? (
+          <button onClick={() => window.__back && window.__back()} style={{
+            width: 36, height: 36, borderRadius: 999,
+            border: '1px solid var(--rule)', background: 'var(--paper-card)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
+            cursor: 'pointer',
+          }}>
+            <svg width="14" height="14" viewBox="0 0 14 14"><path d="M9 2L4 7l5 5" fill="none" stroke="var(--ink)" strokeWidth="1.8" strokeLinecap="round"/></svg>
+          </button>
+        ) : <NCMark size={28} />}
+        <NCWordmark size={14} />
+        <div style={{ width: 36 }}>{action}</div>
+      </div>
+      <div style={{ padding: '6px 20px 14px' }}>
+        {subtitle && <div className="nc-eyebrow" style={{ marginBottom: 4 }}>{subtitle}</div>}
+        <div className="nc-h1" style={{ fontSize: 30 }}>{title}</div>
+      </div>
+    </div>
+  );
+}
+
+function NCBottomTab({ active = 'home' }) {
+  const tabs = [
+    { key: 'home',     label: 'Mercado', icon: 'M3 9l7-6 7 6v8a1 1 0 01-1 1h-4v-5h-4v5H4a1 1 0 01-1-1V9z' },
+    { key: 'search',   label: 'Buscar',  icon: 'M14 14l3 3m-3-7a4 4 0 11-8 0 4 4 0 018 0z' },
+    { key: 'post',     label: 'Publicar', icon: 'M10 4v12m-6-6h12' },
+    { key: 'requests', label: 'Solicitudes', icon: 'M3 5h14v9H7l-4 3V5z' },
+    { key: 'me',       label: 'Finca',   icon: 'M10 10a3 3 0 100-6 3 3 0 000 6zm-6 7c0-3.3 2.7-6 6-6s6 2.7 6 6' },
+  ];
+  return (
+    <div style={{
+      position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 60,
+      background: 'var(--paper)',
+      borderTop: '1px solid var(--rule)',
+      paddingBottom: 28, paddingTop: 8,
+      display: 'flex', justifyContent: 'space-around', alignItems: 'flex-start',
+    }}>
+      {tabs.map(t => {
+        const on = t.key === active;
+        const post = t.key === 'post';
+        const tabRoutes = { home: 'home', search: 'home', post: 'crear', requests: 'solicitudes', me: 'perfil-finca' };
+        return (
+          <div key={t.key} onClick={() => window.__nav && window.__nav(tabRoutes[t.key] || 'home')} style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+            flex: 1, position: 'relative', cursor: 'pointer',
+            color: on ? 'var(--terra)' : 'var(--ink-2)',
+          }}>
+            {post ? (
+              <div style={{
+                width: 38, height: 38, borderRadius: 999,
+                background: 'var(--terra)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginTop: -16, boxShadow: '0 4px 12px rgba(139,58,44,0.3)',
+              }}>
+                <svg width="18" height="18" viewBox="0 0 20 20"><path d="M10 4v12m-6-6h12" stroke="#f4ecdb" strokeWidth="2" strokeLinecap="round"/></svg>
+              </div>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d={t.icon} stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
+            <span style={{
+              fontFamily: 'var(--sans)', fontSize: 10, letterSpacing: 0.02,
+              fontWeight: on ? 600 : 400,
+              color: on ? 'var(--terra)' : 'var(--ink-2)',
+            }}>{t.label}</span>
+            {on && !post && <div style={{ position: 'absolute', top: -8, width: 22, height: 2, background: 'var(--terra)' }} />}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// Cattle photo placeholder — striped paper card with mono label
+function NCPhoto({ height = 160, label = 'foto ganado', tag, dark }) {
+  return (
+    <div className="nc-ph" style={{
+      height, width: '100%', borderRadius: 'var(--r-sm)',
+      position: 'relative', overflow: 'hidden',
+    }}>
+      <span>{label}</span>
+      {tag && (
+        <div style={{
+          position: 'absolute', top: 8, left: 8,
+          padding: '3px 6px', background: 'rgba(28,24,20,0.78)', color: 'var(--paper)',
+          fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: 0.1,
+          borderRadius: 3, textTransform: 'uppercase',
+        }}>{tag}</div>
+      )}
+    </div>
+  );
+}
+
+// Mobile screen wrapper — places content within a phone, applies the screen bg
+function NCScreen({ children, tab, noTab, label }) {
+  return (
+    <IOSDevice width={390} height={844}>
+      <div className="nc-screen" data-screen-label={label} style={{ paddingBottom: noTab ? 0 : 84 }}>
+        {children}
+      </div>
+      {!noTab && <NCBottomTab active={tab} />}
+    </IOSDevice>
+  );
+}
+
+// Verified ear-tag chip
+function NCEarTag({ children = 'Verificado' }) {
+  return (
+    <span className="nc-verified">
+      <svg width="9" height="9" viewBox="0 0 10 10"><path d="M1 5l3 3 5-6" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      {children}
+    </span>
+  );
+}
+
+Object.assign(window, { NCTopBar, NCBottomTab, NCPhoto, NCScreen, NCEarTag });
+
+  </script>
+
+  <!-- Brand system (NCMark, NCWordmark, BrandSystemCard) -->
+  <script type="text/babel">
+// brand.jsx — Brand system overview card (logo, type, color)
+
+function NCMark({ size = 28 }) {
+  return (
+    <span
+      className="nc-mark"
+      style={{
+        width: size * 1.4,
+        height: size,
+        fontSize: size * 0.6,
+        paddingBottom: size * 0.05,
+      }}
+    >
+      nc
+    </span>
+  );
+}
+
+function NCWordmark({ size = 22, color }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: size * 0.4 }}>
+      <NCMark size={size} />
+      <span className="nc-wordmark" style={{ fontSize: size * 1.05, color: color || 'var(--ink)' }}>
+        novuscampo
+      </span>
+    </span>
+  );
+}
+
+function BrandSystemCard() {
+  return (
+    <div style={{
+      width: 1080, height: 620,
+      background: 'var(--paper)',
+      padding: '48px 56px',
+      boxSizing: 'border-box',
+      display: 'grid',
+      gridTemplateColumns: '1.1fr 1fr',
+      gap: 48,
+      fontFamily: 'var(--sans)',
+      color: 'var(--ink)',
+    }}>
+      {/* LEFT: mark + wordmark + voice */}
+      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div>
+          <div className="nc-eyebrow" style={{ marginBottom: 20 }}>
+            Sistema de marca · v0.1 · Caracas
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 24 }}>
+            <NCMark size={64} />
+            <div>
+              <div className="nc-wordmark" style={{ fontSize: 56, lineHeight: 1, color: 'var(--ink)' }}>
+                novuscampo
+              </div>
+              <div className="nc-meta" style={{ marginTop: 6 }}>
+                Comercio ganadero · directo · del llano al hato
+              </div>
+            </div>
+          </div>
+
+          <div className="nc-rule" style={{ margin: '24px 0' }} />
+
+          <div style={{ maxWidth: 460 }}>
+            <div className="nc-eyebrow" style={{ marginBottom: 8 }}>Voz</div>
+            <p style={{ fontFamily: 'var(--serif)', fontSize: 22, lineHeight: 1.3, margin: 0, color: 'var(--ink)' }}>
+              Sobria, llanera y profesional. Hablamos como el almanaque agropecuario: con autoridad, sin floritura. <em>Mauta, novillo, pie de cría</em> — vocabulario del campo, no del e-commerce.
+            </p>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 32 }}>
+          <div>
+            <div className="nc-eyebrow" style={{ marginBottom: 6 }}>Sí</div>
+            <div className="nc-body">Mauta · Cebú · Carora · Apure · Solicitar contacto</div>
+          </div>
+          <div style={{ width: 1, background: 'var(--rule)' }} />
+          <div>
+            <div className="nc-eyebrow" style={{ marginBottom: 6 }}>No</div>
+            <div className="nc-body" style={{ color: 'var(--ink-3)', textDecoration: 'line-through' }}>
+              Bovino premium · Lote disruptivo · Agregar al carrito
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* RIGHT: type + palette */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+        {/* Type */}
+        <div>
+          <div className="nc-eyebrow" style={{ marginBottom: 12 }}>Tipografía</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '10px 18px', alignItems: 'baseline' }}>
+            <span className="nc-meta">Display</span>
+            <span style={{ fontFamily: 'var(--serif)', fontSize: 36, fontWeight: 500 }}>
+              Newsreader <em style={{ color: 'var(--terra)' }}>Aa</em>
+            </span>
+            <span className="nc-meta">Interfaz</span>
+            <span style={{ fontFamily: 'var(--sans)', fontSize: 22, fontWeight: 500 }}>DM Sans · Aa Bb 0123</span>
+            <span className="nc-meta">Dato</span>
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 18 }}>JetBrains Mono · 480kg · APR</span>
+          </div>
+        </div>
+
+        <div className="nc-rule" />
+
+        {/* Palette */}
+        <div>
+          <div className="nc-eyebrow" style={{ marginBottom: 12 }}>Paleta</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+            {[
+              { name: 'Papel', hex: '#f4ecdb', v: 'var(--paper)', text: 'var(--ink)' },
+              { name: 'Tinta', hex: '#1c1814', v: 'var(--ink)', text: 'var(--paper)' },
+              { name: 'Terracota', hex: '#8b3a2c', v: 'var(--terra)', text: 'var(--paper)' },
+              { name: 'Olivo', hex: '#5a6440', v: 'var(--olive)', text: 'var(--paper)' },
+            ].map((c) => (
+              <div key={c.name}>
+                <div style={{
+                  height: 78, background: c.v, borderRadius: 'var(--r-sm)',
+                  border: '1px solid var(--rule-soft)',
+                  display: 'flex', alignItems: 'flex-end', padding: 8,
+                }}>
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: c.text, opacity: 0.85 }}>
+                    {c.hex}
+                  </span>
+                </div>
+                <div className="nc-meta" style={{ marginTop: 6 }}>{c.name}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="nc-rule" />
+
+        {/* Mark study */}
+        <div>
+          <div className="nc-eyebrow" style={{ marginBottom: 12 }}>Marca de oreja</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 22 }}>
+            <NCMark size={48} />
+            <NCMark size={32} />
+            <NCMark size={20} />
+            <NCMark size={14} />
+            <span className="nc-body" style={{ color: 'var(--ink-2)', marginLeft: 8, maxWidth: 200 }}>
+              Caravana ganadera reinterpretada. Funciona desde 12px hasta favicon impreso.
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { NCMark, NCWordmark, BrandSystemCard });
+
+  </script>
+
+  <!-- Onboarding screens -->
+  <script type="text/babel">
+// onboarding.jsx — splash, registro, verificación
+
+// Screen 1 — Splash with llanero portrait
+function ScreenSplash() {
+  return (
+    <NCScreen noTab label="01 Splash">
+      <div style={{ position: 'relative', height: '100%', display: 'flex', flexDirection: 'column' }}>
+        {/* Portrait area */}
+        <div style={{ position: 'relative', height: 480, overflow: 'hidden' }}>
+          <img
+            src={window.__resources && window.__resources.llaneroPortrait}
+            alt="llanero"
+            style={{
+              width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 18%',
+              filter: 'contrast(0.96) saturate(0.85)',
+            }}
+          />
+          {/* Paper bleed at bottom */}
+          <div style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0, height: 90,
+            background: 'linear-gradient(to bottom, transparent, var(--paper) 92%)',
+          }} />
+          {/* Brand stamp top-left */}
+          <div style={{
+            position: 'absolute', top: 64, left: 20, right: 20,
+            display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start',
+          }}>
+            <div style={{
+              background: 'var(--paper)', padding: '6px 10px',
+              border: '1px solid var(--rule)',
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+            }}>
+              <NCMark size={20} />
+              <span className="nc-wordmark" style={{ fontSize: 16 }}>novuscampo</span>
+            </div>
+          </div>
+          {/* Caption ribbon */}
+          <div style={{
+            position: 'absolute', bottom: 16, left: 20, right: 20,
+            display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end',
+          }}>
+            <div className="nc-meta" style={{ color: 'var(--ink-1)' }}>
+              «Don Eladio Romero — Hato La Candelaria, Apure»
+            </div>
+          </div>
+        </div>
+
+        {/* Hero copy */}
+        <div style={{ padding: '20px 22px 14px' }}>
+          <div className="nc-eyebrow" style={{ marginBottom: 12 }}>Mercado ganadero · Venezuela</div>
+          <h1 className="nc-h1" style={{ fontSize: 36, fontWeight: 500 }}>
+            Comercio ganadero <em style={{ color: 'var(--terra)', fontWeight: 400 }}>directo</em>, del campo al campo.
+          </h1>
+          <p className="nc-body" style={{ marginTop: 10, color: 'var(--ink-1)', fontSize: 14 }}>
+            Productores y compradores se encuentran sin intermediarios. Cerramos por WhatsApp, no por algoritmo.
+          </p>
+        </div>
+
+        {/* CTAs */}
+        <div style={{ padding: '4px 22px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <button className="nc-btn nc-btn--terra" style={{ width: '100%' }} onClick={() => window.__nav('registro')}>
+            Soy productor — vendo ganado
+          </button>
+          <button className="nc-btn nc-btn--ghost" style={{ width: '100%' }} onClick={() => window.__nav('registro')}>
+            Soy comprador — busco ganado
+          </button>
+          <div style={{ textAlign: 'center', marginTop: 12 }}>
+            <span className="nc-meta">¿Ya tiene cuenta?  </span>
+            <a style={{ fontFamily: 'var(--sans)', fontSize: 12, color: 'var(--ink)', textDecoration: 'underline', cursor: 'pointer' }} onClick={() => window.__nav('home')}>
+              Iniciar sesión
+            </a>
+          </div>
+        </div>
+      </div>
+    </NCScreen>
+  );
+}
+
+// Screen 2 — Registro
+function ScreenRegistro() {
+  return (
+    <NCScreen noTab label="02 Registro">
+      <NCTopBar title="Crear cuenta" subtitle="Paso 1 de 2 · Datos básicos" />
+      <div style={{ padding: '20px 22px 32px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+        {/* Role pick — multi-select */}
+        <div>
+          <span className="nc-label">¿Qué quiere hacer en Novuscampo?</span>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <button style={{
+              padding: '14px 12px', textAlign: 'left',
+              background: 'var(--paper-card)',
+              border: '1.5px solid var(--terra)', borderRadius: 'var(--r-md)', cursor: 'pointer',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span className="nc-eyebrow">Vender ganado</span>
+                <span style={{
+                  width: 18, height: 18, borderRadius: 4, background: 'var(--terra)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 5l3 3 5-6" stroke="var(--paper)" strokeWidth="1.8" fill="none" strokeLinecap="round"/></svg>
+                </span>
+              </div>
+              <div style={{ fontFamily: 'var(--serif)', fontSize: 17, lineHeight: 1.15 }}>Vender ganado</div>
+              <div className="nc-meta" style={{ marginTop: 4 }}>Tengo finca o hato</div>
+            </button>
+            <button style={{
+              padding: '14px 12px', textAlign: 'left',
+              background: 'var(--paper-card)',
+              border: '1.5px solid var(--terra)', borderRadius: 'var(--r-md)', cursor: 'pointer',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span className="nc-eyebrow">Comprar ganado</span>
+                <span style={{
+                  width: 18, height: 18, borderRadius: 4, background: 'var(--terra)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 5l3 3 5-6" stroke="var(--paper)" strokeWidth="1.8" fill="none" strokeLinecap="round"/></svg>
+                </span>
+              </div>
+              <div style={{ fontFamily: 'var(--serif)', fontSize: 17, lineHeight: 1.15 }}>Comprar ganado</div>
+              <div className="nc-meta" style={{ marginTop: 4 }}>Cebador, lechero, cría, genética</div>
+            </button>
+          </div>
+          <div className="nc-meta" style={{ marginTop: 6, color: 'var(--ink-3)' }}>Puede marcar ambas.</div>
+        </div>
+
+        <div>
+          <span className="nc-label">Nombre completo</span>
+          <input className="nc-input" defaultValue="Eladio Romero Pérez" />
+        </div>
+        <div>
+          <span className="nc-label">WhatsApp</span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <div className="nc-input" style={{ width: 86, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
+              <span className="nc-num" style={{ fontSize: 14 }}>+58</span>
+            </div>
+            <input className="nc-input" defaultValue="424 312 88 90" style={{ flex: 1 }} />
+          </div>
+          <div className="nc-meta" style={{ marginTop: 6, color: 'var(--ink-3)' }}>
+            Usamos este número para verificarlo y para que los compradores le escriban. Usted controla quién ve su número en su perfil.
+          </div>
+        </div>
+        <div>
+          <span className="nc-label">Correo (opcional)</span>
+          <input className="nc-input" placeholder="usted@correo.com" />
+        </div>
+
+        <button className="nc-btn nc-btn--terra" style={{ marginTop: 10, width: '100%' }} onClick={() => window.__nav('verificacion')}>
+          Enviar código por SMS
+          <svg width="14" height="14" viewBox="0 0 14 14"><path d="M5 2l5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+        </button>
+        <div className="nc-meta" style={{ textAlign: 'center', color: 'var(--ink-3)' }}>
+          Al continuar acepta los términos del marketplace.
+        </div>
+      </div>
+    </NCScreen>
+  );
+}
+
+// Screen 3 — Verificación (WhatsApp / SMS)
+function VerificacionCanalTabs({ canal = 'whatsapp' }) {
+  const tabs = [
+    { id: 'whatsapp', label: 'WhatsApp', hint: 'recomendado' },
+    { id: 'sms', label: 'SMS', hint: null },
+  ];
+  return (
+    <div style={{
+      display: 'flex', padding: 4,
+      background: 'var(--paper-card)', border: '1px solid var(--rule)',
+      borderRadius: 'var(--r-sm)', marginBottom: 18,
+    }}>
+      {tabs.map((t) => {
+        const on = t.id === canal;
+        return (
+          <button key={t.id} style={{
+            flex: 1, height: 40,
+            background: on ? 'var(--ink)' : 'transparent',
+            color: on ? 'var(--paper)' : 'var(--ink-2)',
+            border: 'none', borderRadius: 'calc(var(--r-sm) - 2px)',
+            fontFamily: 'var(--sans)', fontSize: 13.5, fontWeight: on ? 600 : 400,
+            cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          }}>
+            {t.id === 'whatsapp' && (
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 3.5C18.3 1.3 15.3 0 12 0 5.4 0 0 5.4 0 12c0 2.1.6 4.2 1.6 6L0 24l6.2-1.6c1.7.9 3.7 1.4 5.7 1.4 6.6 0 12-5.4 12-12 0-3.3-1.3-6.3-3.4-8.3z"/></svg>
+            )}
+            {t.id === 'sms' && (
+              <svg width="13" height="13" viewBox="0 0 18 18" fill="none"><path d="M2 3h14v9H7l-3 3v-3H2V3z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></svg>
+            )}
+            <span>{t.label}</span>
+            {t.hint && (
+              <span style={{
+                fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: 0.05,
+                color: on ? 'var(--terra-tint)' : 'var(--ink-3)',
+                textTransform: 'uppercase',
+              }}>· {t.hint}</span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ScreenVerificacion() {
+  const code = ['8', '4', '2', '0', '', ''];
+  const canal = 'whatsapp';
+  return (
+    <NCScreen noTab label="03 Verificación">
+      <NCTopBar title="Verificación" subtitle="Paso 2 de 2 · Verificación" />
+      <div style={{ padding: '8px 22px 32px' }}>
+        <VerificacionCanalTabs canal={canal} />
+
+        <p className="nc-body" style={{ marginBottom: 20 }}>
+          {canal === 'whatsapp'
+            ? <>Le enviamos un código de 6 dígitos por WhatsApp a <span className="nc-num" style={{ color: 'var(--ink)' }}>+58 424 312 88 90</span>.</>
+            : <>Le enviamos un código de 6 dígitos por SMS a <span className="nc-num" style={{ color: 'var(--ink)' }}>+58 424 312 88 90</span>.</>}
+        </p>
+
+        <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
+          {code.map((d, i) => (
+            <div key={i} style={{
+              flex: 1, aspectRatio: '1 / 1.15',
+              border: i === 4 ? '1.5px solid var(--terra)' : '1px solid var(--rule)',
+              borderRadius: 'var(--r-sm)',
+              background: 'var(--paper-card)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: 'var(--mono)', fontSize: 26, color: 'var(--ink)',
+              position: 'relative',
+            }}>
+              {d}
+              {i === 4 && <div style={{ position: 'absolute', width: 1.5, height: 22, background: 'var(--terra)', animation: 'none' }} />}
+            </div>
+          ))}
+        </div>
+
+        <div className="nc-meta" style={{ textAlign: 'center', color: 'var(--ink-2)', marginBottom: 28 }}>
+          Reenviar en <span className="nc-num">00:42</span>
+        </div>
+
+        <button className="nc-btn nc-btn--terra" style={{ width: '100%', cursor: 'pointer' }} onClick={() => window.__nav('home')}>
+          Continuar
+        </button>
+      </div>
+    </NCScreen>
+  );
+}
+
+Object.assign(window, { ScreenSplash, ScreenRegistro, ScreenVerificacion, VerificacionCanalTabs });
+
+  </script>
+
+  <!-- Buyer screens -->
+  <script type="text/babel">
+// buyer.jsx — Home (mercado), Filtros, Detalle publicación, Éxito WhatsApp
+
+const LISTINGS = [
+  { id: 'NC-2401', tipo: 'Levante', raza: 'Brahman', sex: 'M', n: 24, kg: '210–260', age: '14–18m', loc: 'Apure · San Fernando', price: 'USD 480/cab', verified: true, posted: 'hace 2 d', tag: 'Levante',
+    pesoEn: 'finca', transporte: 'comprador', visitaPrevia: true, intermediarios: 'acepta', formaPago: ['efectivo', 'transferencia'] },
+  { id: 'NC-2402', tipo: 'Lechero', raza: 'Carora', sex: 'H', n: 8, kg: '420–450', age: '4–5 a', loc: 'Lara · El Tocuyo', price: 'A negociar', verified: true, posted: 'hace 5 h', tag: 'Lechero',
+    pesoEn: 'finca', transporte: 'negociar', visitaPrevia: true, intermediarios: 'directo', formaPago: ['transferencia'] },
+  { id: 'NC-2403', tipo: 'Engorde', raza: 'F1 / Mestizo', sex: 'M', n: 32, kg: '380–430', age: '24–30m', loc: 'Guárico · Calabozo', price: 'A negociar', verified: true, posted: 'hace 1 d', tag: 'Ceba',
+    pesoEn: 'embarque', transporte: 'incluido', visitaPrevia: false, intermediarios: 'acepta', formaPago: ['efectivo', 'mixto'] },
+  { id: 'NC-2404', tipo: 'Cría', raza: 'Gyr lechero', sex: 'H', n: 12, kg: '380–410', age: '3–4 a', loc: 'Zulia · Machiques', price: 'Consultar', verified: true, posted: 'hace 3 d', tag: 'Lechero',
+    pesoEn: 'finca', transporte: 'comprador', visitaPrevia: true, intermediarios: 'directo', formaPago: ['transferencia'] },
+  { id: 'NC-2405', tipo: 'Levante', raza: 'Senepol', sex: 'M', n: 14, kg: '180–220', age: '12–16m', loc: 'Cojedes · San Carlos', price: 'A negociar', verified: true, posted: 'hace 1 sem', tag: 'Levante',
+    pesoEn: 'embarque', transporte: 'negociar', visitaPrevia: true, intermediarios: 'acepta', formaPago: ['efectivo'] },
+];
+
+function ListingCard({ l, dense }) {
+  return (
+    <div className="nc-card" onClick={() => window.__nav && window.__nav('detalle')} style={{
+      padding: 0, overflow: 'hidden', display: 'flex', cursor: 'pointer',
+      flexDirection: dense ? 'row' : 'column',
+    }}>
+      <NCPhoto
+        height={dense ? 96 : 168}
+        label={dense ? '' : l.raza.toLowerCase()}
+        tag={l.tag}
+      />
+      <div style={{
+        padding: dense ? '10px 12px' : '14px',
+        display: 'flex', flexDirection: 'column', gap: 4,
+        flex: 1,
+        ...(dense ? { width: 'calc(100% - 110px)' } : {}),
+        ...(dense ? {} : { borderTop: '1px solid var(--rule-soft)' }),
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span className="nc-meta nc-num" style={{ color: 'var(--ink-3)' }}>{l.id}</span>
+              {l.verified && <NCEarTag>Verif.</NCEarTag>}
+            </div>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: dense ? 16 : 18, fontWeight: 500, marginTop: 2, color: 'var(--ink)', lineHeight: 1.2 }}>
+              {l.tipo} · {l.raza}
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div className="nc-meta" style={{ fontSize: 10 }}>cant.</div>
+            <div className="nc-num" style={{ fontSize: 18, color: 'var(--ink)', fontWeight: 500 }}>{l.n}</div>
+          </div>
+        </div>
+
+        <div style={{
+          display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4,
+          marginTop: 4, paddingTop: 8, borderTop: '1px dashed var(--rule)',
+        }}>
+          <Stat label="peso" value={l.kg + ' kg'} />
+          <Stat label="edad" value={l.age} />
+          <Stat label="sexo" value={l.sex === 'M' ? 'Macho' : 'Hembra'} />
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+          <div className="nc-meta" style={{ color: 'var(--ink-2)' }}>
+            <span>{l.loc}</span> · <span>{l.posted}</span>
+          </div>
+          <span className="nc-num" style={{ fontSize: 13, color: 'var(--terra-deep)', fontWeight: 600 }}>{l.price}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Stat({ label, value }) {
+  return (
+    <div>
+      <div className="nc-meta" style={{ fontSize: 9, color: 'var(--ink-3)' }}>{label}</div>
+      <div className="nc-num" style={{ fontSize: 12, color: 'var(--ink-1)', marginTop: 1 }}>{value}</div>
+    </div>
+  );
+}
+
+// HOME
+function ScreenHome({ density = 'grid', verified = true }) {
+  const filters = [
+    { id: 'cerca', label: 'Cerca de mí', icon: true },
+    { id: 'todos', label: 'Todos' },
+    { id: 'levante', label: 'Levante' },
+    { id: 'engorde', label: 'Engorde' },
+    { id: 'lechero', label: 'Lechero' },
+    { id: 'cria', label: 'Cría' },
+  ];
+  const list = density === 'list';
+  return (
+    <NCScreen tab="home" label="04 Mercado · Home">
+      {/* Custom header */}
+      <div style={{
+        position: 'sticky', top: 0, zIndex: 5,
+        background: 'var(--paper)',
+        paddingTop: 54,
+        borderBottom: '1px solid var(--rule-soft)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 18px' }}>
+          <NCWordmark size={14} />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button style={iconBtn}>
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M9 2v14m7-7H2" stroke="var(--ink)" strokeWidth="1.6" strokeLinecap="round"/></svg>
+            </button>
+            <button style={iconBtn}>
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M3 4h12M5 9h8M7 14h4" stroke="var(--ink)" strokeWidth="1.6" strokeLinecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+        <div style={{ padding: '4px 20px 12px' }}>
+          <div className="nc-eyebrow" style={{ marginBottom: 6 }}>El mercado · {new Date().toLocaleDateString('es-VE', { day: '2-digit', month: 'long' })}</div>
+          <div className="nc-h1" style={{ fontSize: 28, lineHeight: 1.05 }}>
+            <span className="nc-num" style={{ fontFamily: 'var(--mono)', fontSize: 26, color: 'var(--terra)' }}>23</span> lotes en Apure y aledaños
+          </div>
+          <div className="nc-body" style={{ color: 'var(--ink-2)', fontSize: 13, marginTop: 4 }}>
+            Brahman, Carora, Senepol y más — ordenados por cercanía.
+          </div>
+        </div>
+
+        {/* Search bar */}
+        <div style={{ padding: '0 18px 10px' }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            background: 'var(--paper-card)', border: '1px solid var(--rule)',
+            borderRadius: 'var(--r-sm)', padding: '0 12px', height: 42,
+          }}>
+            <svg width="14" height="14" viewBox="0 0 14 14"><circle cx="6" cy="6" r="4" stroke="var(--ink-2)" strokeWidth="1.5" fill="none"/><path d="M9 9l4 4" stroke="var(--ink-2)" strokeWidth="1.5" strokeLinecap="round"/></svg>
+            <input placeholder="raza, ubicación, ID de lote…" style={{
+              flex: 1, border: 'none', background: 'transparent', outline: 'none',
+              fontFamily: 'var(--sans)', fontSize: 14, color: 'var(--ink)',
+            }} />
+            <div style={{ width: 1, height: 18, background: 'var(--rule)' }} />
+            <button onClick={() => window.__nav('filtros')} style={{
+              border: 'none', background: 'transparent', cursor: 'pointer',
+              fontFamily: 'var(--sans)', fontSize: 12, color: 'var(--terra)', fontWeight: 600,
+              display: 'flex', alignItems: 'center', gap: 4,
+            }}>
+              Filtros
+              <span style={{
+                background: 'var(--terra)', color: 'var(--paper)',
+                fontSize: 9, padding: '1px 4px', borderRadius: 999,
+                fontFamily: 'var(--mono)',
+              }}>2</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Filter chips */}
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '0 18px 12px' }}>
+          {filters.map((f, i) => {
+            const active = f.id === 'cerca' || i === 2;
+            return (
+              <span key={f.id} className={`nc-chip ${active ? (f.id === 'cerca' ? 'nc-chip--terra' : 'nc-chip--active') : ''}`}
+                style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                {f.icon && (
+                  <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                    <path d="M6 1c2.2 0 4 1.8 4 4 0 3-4 6-4 6S2 8 2 5c0-2.2 1.8-4 4-4z" stroke="currentColor" strokeWidth="1.4"/>
+                    <circle cx="6" cy="5" r="1.3" fill="currentColor"/>
+                  </svg>
+                )}
+                {active && f.id !== 'cerca' && '✓ '}{f.label}
+              </span>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Listings */}
+      <div style={{ padding: '14px 18px 20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+          <span className="nc-eyebrow">Lotes recientes · por cercanía</span>
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button style={{ ...miniTab, ...(list ? {} : miniTabActive) }}>
+              <svg width="11" height="11" viewBox="0 0 12 12"><rect x="1" y="1" width="4" height="4"/><rect x="7" y="1" width="4" height="4"/><rect x="1" y="7" width="4" height="4"/><rect x="7" y="7" width="4" height="4"/></svg>
+            </button>
+            <button style={{ ...miniTab, ...(list ? miniTabActive : {}) }}>
+              <svg width="11" height="11" viewBox="0 0 12 12"><rect x="1" y="2" width="10" height="2"/><rect x="1" y="6" width="10" height="2"/><rect x="1" y="10" width="10" height="1.5"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: list ? '1fr' : '1fr 1fr', gap: 12 }}>
+          {LISTINGS.filter(l => verified || true).slice(0, list ? 5 : 4).map(l => (
+            <ListingCard key={l.id} l={l} dense={list} />
+          ))}
+        </div>
+      </div>
+    </NCScreen>
+  );
+}
+
+const iconBtn = {
+  width: 32, height: 32, borderRadius: 999,
+  border: '1px solid var(--rule)', background: 'var(--paper-card)',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  padding: 0, cursor: 'pointer',
+};
+const miniTab = {
+  width: 26, height: 26, border: '1px solid var(--rule)',
+  background: 'var(--paper-card)', color: 'var(--ink-2)',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  cursor: 'pointer', padding: 0, fill: 'currentColor',
+};
+const miniTabActive = { background: 'var(--ink)', color: 'var(--paper)', borderColor: 'var(--ink)' };
+
+// FILTROS — reducido a Tipo + Región
+function ScreenFiltros() {
+  return (
+    <NCScreen noTab label="05 Filtros">
+      <NCTopBar title="Filtros" subtitle="Refine su búsqueda" action={
+        <button style={{ background: 'transparent', border: 'none', padding: 0, color: 'var(--terra)', fontFamily: 'var(--sans)', fontSize: 13, fontWeight: 600 }}>Limpiar</button>
+      } />
+      <div style={{ padding: '14px 22px 100px', display: 'flex', flexDirection: 'column', gap: 26 }}>
+
+        {/* Tipo de ganado */}
+        <Section title="Tipo de ganado" hint="múltiple">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {[['Cría', false], ['Levante', true], ['Engorde', true], ['Lechero', false]].map(([t, on]) => (
+              <span key={t} className={`nc-chip ${on ? 'nc-chip--terra' : ''}`}>{on && '✓ '}{t}</span>
+            ))}
+          </div>
+        </Section>
+
+        {/* Región */}
+        <Section title="Región" hint="estado">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {['Apure', 'Barinas', 'Guárico', 'Cojedes', 'Portuguesa', 'Zulia', 'Monagas', 'Anzoátegui', 'Lara', 'Táchira', 'Mérida', 'Bolívar'].map((s, i) => (
+              <span key={s} className={`nc-chip ${[0, 2].includes(i) ? 'nc-chip--terra' : ''}`}>{[0, 2].includes(i) && '✓ '}{s}</span>
+            ))}
+          </div>
+        </Section>
+      </div>
+
+      {/* Sticky apply */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        padding: '14px 22px 32px', background: 'var(--paper)',
+        borderTop: '1px solid var(--rule)',
+        display: 'flex', gap: 10, alignItems: 'center',
+      }}>
+        <div className="nc-meta" style={{ flex: 1 }}>
+          <span className="nc-num" style={{ fontSize: 14, color: 'var(--ink)' }}>23</span> lotes coinciden
+        </div>
+        <button className="nc-btn nc-btn--terra" onClick={() => window.__nav('home')}>Aplicar filtros</button>
+      </div>
+    </NCScreen>
+  );
+}
+
+function Section({ title, hint, children }) {
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
+        <span style={{ fontFamily: 'var(--serif)', fontSize: 16, fontWeight: 500 }}>{title}</span>
+        {hint && <span className="nc-meta" style={{ color: 'var(--ink-3)' }}>{hint}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// DETALLE
+function ScreenDetalle() {
+  return (
+    <NCScreen noTab label="06 Detalle publicación">
+      {/* Top bar floating over photo */}
+      <div style={{ position: 'relative' }}>
+        <NCPhoto height={260} label="brahman · lote completo" />
+        <div style={{
+          position: 'absolute', top: 54, left: 0, right: 0,
+          padding: '0 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        }}>
+          <button style={{ ...iconBtn, background: 'var(--paper)' }}>
+            <svg width="14" height="14" viewBox="0 0 14 14"><path d="M9 2L4 7l5 5" fill="none" stroke="var(--ink)" strokeWidth="1.8" strokeLinecap="round"/></svg>
+          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button style={{ ...iconBtn, background: 'var(--paper)' }}>
+              <svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 3h8v8L7 9l-4 2V3z" fill="none" stroke="var(--ink)" strokeWidth="1.5"/></svg>
+            </button>
+            <button style={{ ...iconBtn, background: 'var(--paper)' }}>
+              <svg width="14" height="14" viewBox="0 0 14 14"><circle cx="3" cy="7" r="1.2" fill="var(--ink)"/><circle cx="7" cy="7" r="1.2" fill="var(--ink)"/><circle cx="11" cy="7" r="1.2" fill="var(--ink)"/></svg>
+            </button>
+          </div>
+        </div>
+        {/* Photo dots */}
+        <div style={{
+          position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)',
+          display: 'flex', gap: 6, padding: '6px 10px',
+          background: 'rgba(28,24,20,0.7)', borderRadius: 999,
+        }}>
+          {[0, 1, 2, 3].map(i => (
+            <span key={i} style={{ width: 6, height: 6, borderRadius: 999, background: i === 0 ? 'var(--paper)' : 'rgba(244,236,219,0.4)' }} />
+          ))}
+        </div>
+        <div style={{ position: 'absolute', bottom: 12, right: 12, padding: '4px 8px', background: 'rgba(28,24,20,0.7)', color: 'var(--paper)', fontFamily: 'var(--mono)', fontSize: 10, borderRadius: 3 }}>
+          1 / 6 · video disp.
+        </div>
+      </div>
+
+      <div style={{ padding: '18px 20px 32px' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+          <span className="nc-meta nc-num" style={{ color: 'var(--ink-3)' }}>NC-2401</span>
+          <NCEarTag>Productor verificado</NCEarTag>
+          <span className="nc-tag" style={{ marginLeft: 'auto' }}>Activo</span>
+        </div>
+        <h2 style={{ fontFamily: 'var(--serif)', fontSize: 26, fontWeight: 500, lineHeight: 1.15, margin: 0 }}>
+          Lote de levante · <em>Brahman puro</em>
+        </h2>
+        <div className="nc-meta" style={{ marginTop: 6 }}>Publicado hace 2 días · 47 vistas</div>
+
+        {/* Key metrics */}
+        <div style={{
+          margin: '18px 0',
+          display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
+          border: '1px solid var(--rule)', borderRadius: 'var(--r-sm)',
+          background: 'var(--paper-card)',
+          overflow: 'hidden',
+        }}>
+          {[
+            ['Cantidad', '24', 'cabezas'],
+            ['Peso prom.', '235', 'kg'],
+            ['Edad', '16', 'meses'],
+          ].map(([l, v, u], i) => (
+            <div key={l} style={{
+              padding: '12px 10px', textAlign: 'center',
+              borderRight: i < 2 ? '1px solid var(--rule)' : 'none',
+            }}>
+              <div className="nc-meta" style={{ fontSize: 9 }}>{l}</div>
+              <div className="nc-num" style={{ fontSize: 22, color: 'var(--ink)', fontWeight: 500, marginTop: 2 }}>{v}</div>
+              <div className="nc-meta" style={{ fontSize: 9, color: 'var(--ink-3)' }}>{u}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Specs */}
+        <div className="nc-eyebrow" style={{ marginBottom: 8 }}>Ficha técnica</div>
+        <div style={{ borderTop: '1px solid var(--rule-soft)' }}>
+          {[
+            ['Tipo', 'Levante'],
+            ['Raza', 'Brahman'],
+            ['Sexo', 'Macho'],
+            ['Sistema', 'Extensivo'],
+            ['Vacunación', 'Aftosa al día · vermifugado'],
+            ['Peso ofrecido en', 'Finca'],
+            ['Transporte', 'Por cuenta del comprador'],
+            ['Visita previa', 'Sí, con cita previa'],
+            ['Intermediarios', 'Acepta comisionistas'],
+            ['Origen', 'Apure · San Fernando (zona aprox.)'],
+          ].map(([k, v]) => (
+            <div key={k} style={{
+              display: 'grid', gridTemplateColumns: '140px 1fr',
+              padding: '10px 0', borderBottom: '1px solid var(--rule-soft)', alignItems: 'baseline',
+            }}>
+              <span className="nc-meta" style={{ color: 'var(--ink-3)' }}>{k}</span>
+              <span className="nc-body" style={{ fontSize: 13, color: 'var(--ink)' }}>{v}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Notas del productor */}
+        <div style={{ marginTop: 18 }}>
+          <div className="nc-eyebrow" style={{ marginBottom: 8 }}>Notas del productor</div>
+          <div style={{
+            padding: 12,
+            background: 'var(--paper-card)',
+            border: '1px dashed var(--rule)',
+            borderRadius: 'var(--r-sm)',
+            fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: 14, color: 'var(--ink-1)', lineHeight: 1.45,
+          }}>
+            «Lote uniforme, mismo padre. Sal mineralizada y rotación de pasto. Se puede ver en pesa antes de cuadrar embarque. Vendo de 12 cabezas en adelante.»
+          </div>
+        </div>
+
+        {/* Price */}
+        <div style={{
+          marginTop: 18, padding: 14,
+          background: 'var(--paper-card)', border: '1px solid var(--rule)',
+          borderRadius: 'var(--r-sm)',
+        }}>
+          <div className="nc-eyebrow">Precio referencial</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 4 }}>
+            <span className="nc-num" style={{ fontSize: 24, color: 'var(--terra-deep)', fontWeight: 600 }}>USD 480</span>
+            <span className="nc-meta">por cabeza · a negociar</span>
+          </div>
+        </div>
+
+        {/* Productor card */}
+        <div style={{
+          marginTop: 18, padding: 14,
+          border: '1px solid var(--rule)', borderRadius: 'var(--r-sm)',
+          display: 'flex', alignItems: 'center', gap: 12,
+        }}>
+          <div style={{
+            width: 44, height: 44, background: 'var(--terra-wash)', borderRadius: 'var(--r-sm)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: 'var(--serif)', fontSize: 18, color: 'var(--terra-deep)', fontStyle: 'italic',
+          }}>LC</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 16 }}>Hato La Candelaria</div>
+            <div className="nc-meta" style={{ marginTop: 2 }}>
+              <NCEarTag>Verificada</NCEarTag>  ·  9 publicaciones  ·  3 años en NC
+            </div>
+          </div>
+          <svg width="14" height="14" viewBox="0 0 14 14"><path d="M5 2l5 5-5 5" fill="none" stroke="var(--ink-3)" strokeWidth="1.8" strokeLinecap="round"/></svg>
+        </div>
+
+        <div style={{ height: 24 }} />
+      </div>
+
+      {/* Sticky CTA */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        padding: '14px 18px 32px', background: 'var(--paper)',
+        borderTop: '1px solid var(--rule)',
+        display: 'flex', gap: 8, alignItems: 'center',
+      }}>
+        <button style={{ ...iconBtn, width: 48, height: 48 }} title="Compartir">
+          <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+            <circle cx="4.5" cy="9" r="2" stroke="var(--ink)" strokeWidth="1.5"/>
+            <circle cx="13.5" cy="4.5" r="2" stroke="var(--ink)" strokeWidth="1.5"/>
+            <circle cx="13.5" cy="13.5" r="2" stroke="var(--ink)" strokeWidth="1.5"/>
+            <path d="M6.2 8l5.6-2.7M6.2 10l5.6 2.7" stroke="var(--ink)" strokeWidth="1.4"/>
+          </svg>
+        </button>
+        <button className="nc-btn nc-btn--wa" style={{ flex: 1, height: 48 }} onClick={() => window.__nav('pre-contacto')}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 3.5C18.3 1.3 15.3 0 12 0 5.4 0 0 5.4 0 12c0 2.1.6 4.2 1.6 6L0 24l6.2-1.6c1.7.9 3.7 1.4 5.7 1.4 6.6 0 12-5.4 12-12 0-3.3-1.3-6.3-3.4-8.3z"/></svg>
+          Contactar por WhatsApp
+        </button>
+      </div>
+    </NCScreen>
+  );
+}
+
+// PRE-CONTACTO WHATSAPP — hoja de mensaje editable previa a abrir WA
+function ScreenPreContactoWhatsApp() {
+  const defaultMsg = 'Buenas, soy Manuel Pacheco. Vi su lote NC-2401 (Levante · Brahman · 24 cab.) en Novuscampo y me interesa. ¿Sigue disponible?';
+  return (
+    <NCScreen noTab label="07 Pre-contacto · WhatsApp">
+      <NCTopBar title="Contactar al productor" subtitle="Mensaje inicial" back={true} />
+      <div style={{ padding: '16px 22px 32px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+        {/* Lote ref */}
+        <div className="nc-card" style={{ padding: 10, display: 'flex', gap: 10, alignItems: 'center' }}>
+          <NCPhoto height={48} label="" />
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div className="nc-meta nc-num" style={{ color: 'var(--ink-3)' }}>NC-2401</div>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 14, lineHeight: 1.2 }}>Levante · Brahman · 24 cab.</div>
+          </div>
+          <span className="nc-num" style={{ fontSize: 12, color: 'var(--terra-deep)' }}>USD 480/cab</span>
+        </div>
+
+        {/* Productor card */}
+        <div style={{
+          padding: 12, border: '1px solid var(--rule)', borderRadius: 'var(--r-sm)',
+          display: 'flex', alignItems: 'center', gap: 12, background: 'var(--paper-card)',
+        }}>
+          <div style={{
+            width: 38, height: 38, background: 'var(--terra-wash)', borderRadius: 'var(--r-sm)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: 16, color: 'var(--terra-deep)',
+          }}>LC</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 15 }}>Hato La Candelaria</div>
+            <div className="nc-meta" style={{ marginTop: 2 }}>Apure · zona aproximada</div>
+          </div>
+          <NCEarTag>Verificada</NCEarTag>
+        </div>
+
+        {/* Mensaje editable */}
+        <div>
+          <div className="nc-eyebrow" style={{ marginBottom: 8 }}>Su mensaje</div>
+          <textarea
+            defaultValue={defaultMsg}
+            style={{
+              width: '100%', minHeight: 130,
+              padding: 12, resize: 'vertical',
+              background: 'var(--paper-card)', border: '1px solid var(--rule)',
+              borderRadius: 'var(--r-sm)',
+              fontFamily: 'var(--sans)', fontSize: 14, color: 'var(--ink)',
+              lineHeight: 1.5, outline: 'none',
+              boxSizing: 'border-box',
+            }}
+          />
+          <div className="nc-meta" style={{ marginTop: 6, color: 'var(--ink-3)' }}>
+            Puede editarlo antes de enviar. Se abrirá WhatsApp con este texto.
+          </div>
+        </div>
+
+        <button className="nc-btn nc-btn--wa" style={{ width: '100%', height: 48 }} onClick={() => alert('Abriría WhatsApp con el mensaje pre-llenado. En el MVP real, esto sería un wa.me link con el mensaje codificado.')}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 3.5C18.3 1.3 15.3 0 12 0 5.4 0 0 5.4 0 12c0 2.1.6 4.2 1.6 6L0 24l6.2-1.6c1.7.9 3.7 1.4 5.7 1.4 6.6 0 12-5.4 12-12 0-3.3-1.3-6.3-3.4-8.3zM12 21.8c-1.8 0-3.6-.5-5.1-1.4l-.4-.2-3.7 1 1-3.6-.2-.4c-1-1.6-1.5-3.4-1.5-5.2 0-5.5 4.5-10 10-10s10 4.5 10 10c-.1 5.5-4.6 9.8-10.1 9.8z"/></svg>
+          Abrir conversación en WhatsApp
+        </button>
+
+        <div style={{
+          padding: 12,
+          background: 'var(--paper-card)',
+          border: '1px dashed var(--rule)',
+          borderRadius: 'var(--r-sm)',
+        }}>
+          <div className="nc-eyebrow" style={{ marginBottom: 4 }}>Consejo del campo</div>
+          <p className="nc-body" style={{ margin: 0, fontSize: 12.5, color: 'var(--ink-2)' }}>
+            Confirme número de cabezas, peso al embarque y forma de pago antes de cuadrar el flete. Es costumbre — y le ahorra disgustos.
+          </p>
+        </div>
+      </div>
+    </NCScreen>
+  );
+}
+
+// Alias retro-compatible (mismo componente, nombre anterior)
+const ScreenExitoWhatsApp = ScreenPreContactoWhatsApp;
+
+Object.assign(window, { ScreenHome, ScreenFiltros, ScreenDetalle, ScreenPreContactoWhatsApp, ScreenExitoWhatsApp });
+
+  </script>
+
+  <!-- Producer screens -->
+  <script type="text/babel">
+// producer.jsx — Perfil finca, Crear publicación (2 pasos), Bandeja solicitudes, Aprobación
+
+// PERFIL DE FINCA
+function ScreenPerfilFinca() {
+  return (
+    <NCScreen tab="me" label="08 Perfil de finca">
+      {/* Header band */}
+      <div style={{
+        paddingTop: 54, paddingBottom: 0, background: 'var(--paper)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 18px' }}>
+          <NCWordmark size={13} />
+          <button style={{
+            background: 'transparent', border: 'none', padding: 0,
+            fontFamily: 'var(--sans)', fontSize: 12, color: 'var(--ink-2)',
+          }}>
+            <svg width="18" height="18" viewBox="0 0 20 20"><path d="M10 6v4l3 2M18 10a8 8 0 11-16 0 8 8 0 0116 0z" fill="none" stroke="currentColor" strokeWidth="1.5"/></svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Hero: finca masthead */}
+      <div style={{ padding: '14px 20px 16px', background: 'var(--paper)', borderBottom: '1px solid var(--rule)' }}>
+        <div className="nc-eyebrow" style={{ marginBottom: 4 }}>Mi finca</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <h1 style={{ fontFamily: 'var(--serif)', fontSize: 30, fontWeight: 500, margin: 0, lineHeight: 1.05 }}>
+            Hato La Candelaria
+          </h1>
+          <div style={{
+            width: 56, height: 56,
+            background: 'var(--terra-wash)',
+            borderRadius: 'var(--r-sm)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'var(--terra-deep)',
+            fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: 22,
+            border: '1px solid var(--terra-tint)',
+          }}>LC</div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+          <NCEarTag>Finca verificada</NCEarTag>
+          <span className="nc-meta">Apure · zona aproximada</span>
+        </div>
+        <div className="nc-body" style={{ marginTop: 10, fontSize: 13, color: 'var(--ink-1)' }}>
+          Productor de levante y pie de cría desde 1998 · sistema extensivo · ganadería tropical.
+        </div>
+      </div>
+
+      {/* Quick stats */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+        borderBottom: '1px solid var(--rule)',
+        background: 'var(--paper-card)',
+      }}>
+        {[
+          ['Activas', '6', 'publicaciones'],
+          ['Contactos', '14', 'este mes'],
+          ['Vendidas', '3', 'auto-reportado'],
+        ].map(([l, v, u], i) => (
+          <div key={l} style={{
+            padding: '14px 10px', textAlign: 'center',
+            borderRight: i < 2 ? '1px solid var(--rule)' : 'none',
+          }}>
+            <div className="nc-meta" style={{ fontSize: 9 }}>{l}</div>
+            <div className="nc-num" style={{ fontSize: 22, fontWeight: 500, color: 'var(--ink)' }}>{v}</div>
+            <div className="nc-meta" style={{ fontSize: 9, color: 'var(--ink-3)' }}>{u}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Info ledger */}
+      <div style={{ padding: '14px 20px 8px' }}>
+        <div className="nc-eyebrow" style={{ marginBottom: 8 }}>Información de la finca</div>
+        {[
+          ['Ubicación general', 'Apure · San Fernando'],
+          ['Actividad', 'Cría · Levante'],
+          ['Razas', 'Brahman, Senepol, F1'],
+          ['Sistema', 'Extensivo'],
+          ['Trato con', 'Acepta comisionistas'],
+          ['Visitas a finca', 'Con cita previa'],
+        ].map(([k, v]) => (
+          <div key={k} style={{
+            display: 'grid', gridTemplateColumns: '130px 1fr',
+            padding: '10px 0', borderBottom: '1px solid var(--rule-soft)', alignItems: 'baseline',
+          }}>
+            <span className="nc-meta" style={{ color: 'var(--ink-3)' }}>{k}</span>
+            <span className="nc-body" style={{ fontSize: 13, color: 'var(--ink)' }}>{v}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* My listings */}
+      <div style={{ padding: '14px 20px 20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+          <span className="nc-eyebrow">Mis publicaciones</span>
+          <a className="nc-meta" style={{ color: 'var(--terra)', textDecoration: 'underline' }}>Ver todas</a>
+        </div>
+        {[
+          { id: 'NC-2401', t: 'Levante · Brahman', n: 24, s: 'Activa', dot: 'var(--olive)', views: 47, req: 3 },
+          { id: 'NC-2389', t: 'Pie de cría · Senepol', n: 8, s: 'Pausada', dot: 'var(--amber)', views: 92, req: 5 },
+          { id: 'NC-2310', t: 'Vaca parida · Carora', n: 4, s: 'Vendida', dot: 'var(--ink-3)', views: 188, req: 12 },
+        ].map((p) => (
+          <div key={p.id} className="nc-card" style={{
+            padding: 12, marginBottom: 8, display: 'flex', gap: 12, alignItems: 'center',
+          }}>
+            <NCPhoto height={56} label="" />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span className="nc-meta nc-num" style={{ color: 'var(--ink-3)' }}>{p.id}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'var(--mono)', fontSize: 9.5, color: p.dot, textTransform: 'uppercase', letterSpacing: 0.1 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: 999, background: p.dot, display: 'inline-block' }} /> {p.s}
+                </span>
+              </div>
+              <div style={{ fontFamily: 'var(--serif)', fontSize: 14, marginTop: 2 }}>{p.t} <span className="nc-num" style={{ color: 'var(--ink-2)' }}>· {p.n}</span></div>
+              <div className="nc-meta" style={{ marginTop: 2, color: 'var(--ink-3)' }}>
+                <span className="nc-num">{p.views}</span> vistas · <span className="nc-num">{p.req}</span> solicitudes
+              </div>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 14 14"><path d="M5 2l5 5-5 5" fill="none" stroke="var(--ink-3)" strokeWidth="1.8" strokeLinecap="round"/></svg>
+          </div>
+        ))}
+
+        <button className="nc-btn nc-btn--ghost" style={{ width: '100%', marginTop: 6 }} onClick={() => window.__nav('crear')}>
+          + Nueva publicación
+        </button>
+      </div>
+
+      {/* Preferencias de contacto */}
+      <PreferenciasContactoCard />
+    </NCScreen>
+  );
+}
+
+function PreferenciasContactoCard() {
+  const [pedirConfirmacion, setPedirConfirmacion] = React.useState(false);
+  return (
+    <div style={{ padding: '4px 20px 28px' }}>
+      <div className="nc-eyebrow" style={{ marginBottom: 8 }}>Preferencias de contacto</div>
+      <div style={{
+        padding: 14,
+        background: 'var(--paper-card)',
+        border: '1px solid var(--rule)',
+        borderRadius: 'var(--r-sm)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 15, lineHeight: 1.2 }}>
+              Pedir confirmación antes de compartir mi WhatsApp
+            </div>
+          </div>
+          <button
+            onClick={() => setPedirConfirmacion(v => !v)}
+            style={{
+              width: 42, height: 24, borderRadius: 999,
+              background: pedirConfirmacion ? 'var(--olive)' : 'var(--ink-3)',
+              position: 'relative', cursor: 'pointer', border: 'none', padding: 0,
+              transition: 'background 160ms ease',
+              flexShrink: 0,
+            }}>
+            <div style={{
+              position: 'absolute', top: 2,
+              left: pedirConfirmacion ? 20 : 2,
+              width: 20, height: 20, borderRadius: 999,
+              background: 'var(--paper)',
+              transition: 'left 160ms ease',
+            }} />
+          </button>
+        </div>
+        <div className="nc-meta" style={{ marginTop: 8, color: 'var(--ink-3)', lineHeight: 1.45 }}>
+          {pedirConfirmacion
+            ? 'Activado: los compradores deben pedirle permiso antes de ver su número.'
+            : 'Desactivado: pueden contactarlo directamente desde sus publicaciones.'}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// CREAR PUBLICACIÓN — un solo scroll, con nuevos campos del comercio real
+function ScreenCrearPublicacion() {
+  return (
+    <NCScreen noTab label="09 Crear publicación">
+      <NCTopBar title="Nueva publicación" action={
+        <button style={{ background: 'transparent', border: 'none', padding: 0, color: 'var(--ink-2)', fontFamily: 'var(--sans)', fontSize: 13 }}>Guardar</button>
+      } />
+
+      <div style={{ padding: '4px 22px 20px', display: 'flex', flexDirection: 'column', gap: 22 }}>
+
+        {/* Tipo */}
+        <FormSection title="Tipo de ganado">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+            {[['Cría', false], ['Levante', true], ['Engorde', false], ['Lechero', false]].map(([t, on]) => (
+              <button key={t} style={{
+                padding: '12px 10px', textAlign: 'left',
+                background: on ? 'var(--ink)' : 'var(--paper-card)',
+                color: on ? 'var(--paper)' : 'var(--ink)',
+                border: '1px solid ' + (on ? 'var(--ink)' : 'var(--rule)'),
+                borderRadius: 'var(--r-sm)',
+                fontFamily: 'var(--sans)', fontSize: 14, cursor: 'pointer',
+              }}>{t}</button>
+            ))}
+          </div>
+        </FormSection>
+
+        {/* Raza */}
+        <FormSection title="Raza" hint="elija una">
+          <div className="nc-input" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ color: 'var(--ink)' }}>Brahman</span>
+            <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" fill="none" stroke="var(--ink-2)" strokeWidth="1.8" strokeLinecap="round"/></svg>
+          </div>
+          <div className="nc-meta" style={{ marginTop: 6, color: 'var(--ink-3)' }}>
+            Brahman · Carora · Senepol · Gyr lechero · Criollo · F1 / Mestizo · Otro
+          </div>
+        </FormSection>
+
+        {/* Sexo + cantidad */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <FormSection title="Sexo">
+            <div style={{ display: 'flex', gap: 4 }}>
+              <Seg active>Macho</Seg>
+              <Seg>Hembra</Seg>
+            </div>
+          </FormSection>
+          <FormSection title="Cantidad">
+            <Stepper value={24} />
+          </FormSection>
+        </div>
+
+        {/* Edad + peso */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <FormSection title="Edad prom." hint="meses">
+            <input className="nc-input" defaultValue="16" />
+          </FormSection>
+          <FormSection title="Peso prom." hint="kg">
+            <input className="nc-input" defaultValue="235" />
+          </FormSection>
+        </div>
+
+        {/* Sistema */}
+        <FormSection title="Sistema productivo">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {[['Extensivo', true], ['Semi-intensivo', false], ['Intensivo', false]].map(([t, on]) => (
+              <span key={t} className={`nc-chip ${on ? 'nc-chip--terra' : ''}`}>{on && '✓ '}{t}</span>
+            ))}
+          </div>
+        </FormSection>
+
+        {/* Estado sanitario */}
+        <FormSection title="Estado sanitario">
+          <label style={{
+            display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+            background: 'var(--paper-card)', border: '1px solid var(--olive)',
+            borderRadius: 'var(--r-sm)', cursor: 'pointer',
+          }}>
+            <span style={{
+              width: 18, height: 18, borderRadius: 4,
+              background: 'var(--olive)', border: '1.5px solid var(--olive)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 5l3 3 5-6" stroke="var(--paper)" strokeWidth="1.8" fill="none" strokeLinecap="round"/></svg>
+            </span>
+            <span className="nc-body">Vacunación contra fiebre aftosa al día</span>
+          </label>
+          <textarea
+            placeholder="Otros tratamientos (vermifugación, vacunas, fechas de último manejo)— opcional"
+            style={{
+              width: '100%', minHeight: 70, marginTop: 8,
+              padding: 12, resize: 'vertical', boxSizing: 'border-box',
+              background: 'var(--paper-card)', border: '1px solid var(--rule)',
+              borderRadius: 'var(--r-sm)', fontFamily: 'var(--sans)', fontSize: 13.5,
+              color: 'var(--ink)', outline: 'none', lineHeight: 1.5,
+            }}
+          />
+        </FormSection>
+
+        {/* Ubicación */}
+        <FormSection title="Ubicación general" hint="estado, no exacto">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <div className="nc-input" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>Apure</span>
+              <svg width="10" height="10" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" fill="none" stroke="var(--ink-2)" strokeWidth="1.8"/></svg>
+            </div>
+            <div className="nc-input" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>San Fernando</span>
+              <svg width="10" height="10" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" fill="none" stroke="var(--ink-2)" strokeWidth="1.8"/></svg>
+            </div>
+          </div>
+          <div className="nc-meta" style={{ marginTop: 6, color: 'var(--ink-3)' }}>
+            Mostraremos sólo el municipio. Su finca exacta nunca es pública.
+          </div>
+        </FormSection>
+
+        {/* Fotos */}
+        <FormSection title="Fotos · video" hint="mín. 2">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+            <NCPhoto height={90} label="ppal" tag="PRINCIPAL" />
+            <NCPhoto height={90} label="lateral" />
+            <NCPhoto height={90} label="grupo" />
+            <div style={{
+              height: 90,
+              border: '1.5px dashed var(--rule)', borderRadius: 'var(--r-sm)',
+              background: 'var(--paper-card)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
+              color: 'var(--ink-2)',
+            }}>
+              <svg width="18" height="18" viewBox="0 0 18 18"><path d="M9 3v12M3 9h12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+              <span className="nc-meta">+ foto</span>
+            </div>
+            <div style={{
+              height: 90,
+              border: '1.5px dashed var(--rule)', borderRadius: 'var(--r-sm)',
+              background: 'var(--paper-card)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
+              color: 'var(--ink-2)',
+            }}>
+              <svg width="18" height="18" viewBox="0 0 18 18"><polygon points="5,4 14,9 5,14" fill="currentColor"/></svg>
+              <span className="nc-meta">+ video</span>
+            </div>
+          </div>
+        </FormSection>
+
+        {/* Peso ofrecido en */}
+        <FormSection
+          title="Peso ofrecido en"
+          hintNode={<HelpTip text="Embarque suele descontar 4–7% por el viaje. Indique cómo va a pesar el ganado para evitar malentendidos." />}
+        >
+          <SegmentedControl options={['En finca', 'Al embarque']} active="En finca" />
+        </FormSection>
+
+        {/* Transporte */}
+        <FormSection title="Transporte">
+          <SegmentedControl options={['Incluido', 'Por cuenta del comprador', 'A negociar']} active="Por cuenta del comprador" />
+        </FormSection>
+
+        {/* Acepta visitas */}
+        <FormSection title="Acepta visitas">
+          <AcceptVisitsToggle />
+        </FormSection>
+
+        {/* Intermediarios */}
+        <FormSection title="Trato con intermediarios">
+          <SegmentedControl options={['Acepto comisionistas', 'Solo trato directo']} active="Acepto comisionistas" />
+        </FormSection>
+
+        {/* Forma de pago */}
+        <FormSection title="Forma de pago aceptada" hint="múltiple">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {[['Efectivo', true], ['Transferencia', true], ['Mixto', false], ['A negociar', false]].map(([t, on]) => (
+              <span key={t} className={`nc-chip ${on ? 'nc-chip--terra' : ''}`}>{on && '✓ '}{t}</span>
+            ))}
+          </div>
+        </FormSection>
+
+        {/* Precio opcional */}
+        <FormSection title="Precio" hint="opcional">
+          <div style={{ display: 'flex', gap: 8 }}>
+            <div className="nc-input" style={{ width: 90, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span className="nc-num">USD</span>
+            </div>
+            <input className="nc-input" defaultValue="480" style={{ flex: 1 }} />
+            <div className="nc-input" style={{ width: 110, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: 13 }}>por cabeza</span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+            <span style={{
+              width: 16, height: 16, borderRadius: 4, background: 'var(--ink)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 5l3 3 5-6" stroke="var(--paper)" strokeWidth="1.8" fill="none" strokeLinecap="round"/></svg>
+            </span>
+            <span className="nc-meta" style={{ color: 'var(--ink-1)' }}>Acepto negociar precio</span>
+          </div>
+        </FormSection>
+      </div>
+
+      {/* Sticky CTA */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        padding: '14px 22px 32px', background: 'var(--paper)',
+        borderTop: '1px solid var(--rule)',
+        display: 'flex', gap: 10, alignItems: 'center',
+      }}>
+        <button className="nc-btn nc-btn--ghost" style={{ flex: 0 }} onClick={() => window.__nav('detalle')}>Vista previa</button>
+        <button className="nc-btn nc-btn--terra" style={{ flex: 1 }} onClick={() => { alert('Publicación creada. Volviendo a su perfil.'); window.__nav('perfil-finca'); }}>
+          Publicar
+          <svg width="14" height="14" viewBox="0 0 14 14"><path d="M5 2l5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+        </button>
+      </div>
+    </NCScreen>
+  );
+}
+
+// Utilitario: segmented control 2–3 opciones
+function SegmentedControl({ options, active }) {
+  return (
+    <div style={{
+      display: 'flex', padding: 3,
+      background: 'var(--paper-card)', border: '1px solid var(--rule)',
+      borderRadius: 'var(--r-sm)',
+    }}>
+      {options.map((opt) => {
+        const on = opt === active;
+        return (
+          <button key={opt} style={{
+            flex: 1, padding: '10px 8px',
+            background: on ? 'var(--ink)' : 'transparent',
+            color: on ? 'var(--paper)' : 'var(--ink-2)',
+            border: 'none', borderRadius: 'calc(var(--r-sm) - 2px)',
+            fontFamily: 'var(--sans)', fontSize: 13, fontWeight: on ? 600 : 400,
+            cursor: 'pointer', lineHeight: 1.15,
+          }}>{opt}</button>
+        );
+      })}
+    </div>
+  );
+}
+
+function HelpTip({ text }) {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', position: 'relative' }}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        style={{
+          width: 18, height: 18, borderRadius: 999,
+          background: 'var(--paper-2)', border: '1px solid var(--rule)',
+          fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-2)',
+          cursor: 'pointer', padding: 0, lineHeight: 1,
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        }}
+        title={text}
+      >?</button>
+      {open && (
+        <div style={{
+          position: 'absolute', top: 24, right: 0, zIndex: 5,
+          width: 220, padding: 10,
+          background: 'var(--ink)', color: 'var(--paper)',
+          borderRadius: 'var(--r-sm)',
+          fontFamily: 'var(--sans)', fontSize: 11.5, lineHeight: 1.45,
+          boxShadow: '0 8px 20px rgba(28,24,20,0.25)',
+        }}>{text}</div>
+      )}
+    </span>
+  );
+}
+
+function AcceptVisitsToggle() {
+  const [on, setOn] = React.useState(true);
+  return (
+    <div>
+      <label style={{
+        display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+        background: 'var(--paper-card)', border: '1px solid ' + (on ? 'var(--olive)' : 'var(--rule)'),
+        borderRadius: 'var(--r-sm)', cursor: 'pointer',
+      }} onClick={() => setOn(v => !v)}>
+        <span style={{
+          width: 18, height: 18, borderRadius: 4,
+          background: on ? 'var(--olive)' : 'transparent',
+          border: '1.5px solid ' + (on ? 'var(--olive)' : 'var(--ink-3)'),
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {on && <svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 5l3 3 5-6" stroke="var(--paper)" strokeWidth="1.8" fill="none" strokeLinecap="round"/></svg>}
+        </span>
+        <span className="nc-body">Acepto visitas a la finca con cita previa</span>
+      </label>
+      {!on && (
+        <div className="nc-meta" style={{ marginTop: 6, color: 'var(--ink-3)' }}>
+          Compartiremos video del lote bajo pedido del comprador.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FormSection({ title, hint, hintNode, children }) {
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 8 }}>
+        <span className="nc-label" style={{ marginBottom: 0 }}>{title}</span>
+        {hintNode ? hintNode : (hint && <span className="nc-meta" style={{ color: 'var(--ink-3)' }}>{hint}</span>)}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Seg({ children, active }) {
+  return (
+    <button style={{
+      flex: 1, height: 48,
+      background: active ? 'var(--ink)' : 'var(--paper-card)',
+      color: active ? 'var(--paper)' : 'var(--ink)',
+      border: '1px solid ' + (active ? 'var(--ink)' : 'var(--rule)'),
+      borderRadius: 'var(--r-sm)', fontFamily: 'var(--sans)', fontSize: 14, cursor: 'pointer',
+    }}>{children}</button>
+  );
+}
+
+function Stepper({ value }) {
+  return (
+    <div className="nc-input" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 6px' }}>
+      <button style={{ width: 36, height: 36, border: 'none', background: 'transparent', fontFamily: 'var(--mono)', fontSize: 18, color: 'var(--ink)' }}>−</button>
+      <span className="nc-num" style={{ fontSize: 18 }}>{value}</span>
+      <button style={{ width: 36, height: 36, border: 'none', background: 'transparent', fontFamily: 'var(--mono)', fontSize: 18, color: 'var(--ink)' }}>+</button>
+    </div>
+  );
+}
+
+// BANDEJA DE CONTACTOS — registro pasivo
+function ScreenSolicitudes() {
+  const reqs = [
+    { name: 'Cebadero El Roble', loc: 'Anzoátegui · El Tigre', lote: 'NC-2401 · Levante Brahman', time: 'hace 14 min', verified: true, msg: 'Buenas, interesados en el lote completo, ¿peso al embarque?', lastReply: null },
+    { name: 'Lácteos El Esfuerzo', loc: 'Zulia · Machiques', lote: 'NC-2389 · Senepol pie de cría', time: 'hace 1 h', verified: false, msg: 'Quería ver disponibilidad de hembras vacías.', lastReply: null },
+    { name: 'José Antonio Quevedo', loc: 'Cojedes · El Baúl', lote: 'NC-2401 · Levante Brahman', time: 'hace 3 h', verified: true, msg: 'Confirmé por WhatsApp. Cerrando 12 cab.', lastReply: 'respondió hace 2 h' },
+    { name: 'Manuel Pacheco', loc: 'Caracas', lote: 'NC-2310 · Carora', time: 'ayer', verified: true, msg: '¿Aún disponible la vaca parida?', lastReply: 'respondió ayer' },
+  ];
+  return (
+    <NCScreen tab="requests" label="10 Bandeja de contactos">
+      <NCTopBar title="Contactos" subtitle="14 contactos este mes" back={false} action={
+        <button style={iconBtn}>
+          <svg width="14" height="14" viewBox="0 0 16 16"><path d="M2 4h12M4 8h8M6 12h4" stroke="var(--ink)" strokeWidth="1.6" strokeLinecap="round"/></svg>
+        </button>
+      } />
+
+      <div style={{ padding: '4px 18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {reqs.map((r, i) => (
+          <div key={i} className="nc-card" style={{
+            padding: 14, background: 'var(--paper-card)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <div style={{
+                width: 40, height: 40,
+                background: 'var(--paper-2)', borderRadius: 'var(--r-sm)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: 16, color: 'var(--ink-1)',
+                flexShrink: 0,
+              }}>{r.name.split(' ').map(w => w[0]).slice(0, 2).join('')}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <span style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 500 }}>{r.name}</span>
+                  {r.verified && <NCEarTag>verif.</NCEarTag>}
+                </div>
+                <div className="nc-meta" style={{ marginTop: 2, color: 'var(--ink-3)' }}>
+                  {r.loc} · {r.time}
+                </div>
+              </div>
+              {r.lastReply && (
+                <span style={{
+                  fontFamily: 'var(--mono)', fontSize: 9.5, letterSpacing: 0.05,
+                  color: 'var(--olive)', textTransform: 'uppercase',
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  whiteSpace: 'nowrap',
+                }}>
+                  <span style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--olive)' }} />
+                  {r.lastReply}
+                </span>
+              )}
+            </div>
+
+            <div style={{
+              marginTop: 10, padding: '8px 10px',
+              background: 'var(--paper)', border: '1px dashed var(--rule)',
+              borderRadius: 'var(--r-xs)',
+            }}>
+              <div className="nc-meta" style={{ color: 'var(--ink-3)' }}>{r.lote}</div>
+              {r.msg && <p className="nc-body" style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--ink-1)' }}>
+                «{r.msg}»
+              </p>}
+            </div>
+
+            <button className="nc-btn nc-btn--wa" style={{ width: '100%', marginTop: 12, height: 40, fontSize: 13 }} onClick={() => alert('Abriría WhatsApp con esta conversación.')}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 3.5C18.3 1.3 15.3 0 12 0 5.4 0 0 5.4 0 12c0 2.1.6 4.2 1.6 6L0 24l6.2-1.6c1.7.9 3.7 1.4 5.7 1.4 6.6 0 12-5.4 12-12 0-3.3-1.3-6.3-3.4-8.3z"/></svg>
+              Abrir WhatsApp
+            </button>
+          </div>
+        ))}
+      </div>
+    </NCScreen>
+  );
+}
+
+// PERFIL COMPRADOR — informacional (con freno opcional, no por defecto)
+function ScreenPerfilComprador({ showApprovalButtons = false } = {}) {
+  return (
+    <NCScreen noTab label="11 Perfil del comprador">
+      {/* Background screen dimmed */}
+      <div style={{ filter: 'blur(2px)', opacity: 0.5, pointerEvents: 'none' }}>
+        <NCTopBar title="Contactos" subtitle="14 este mes" back={false} />
+        <div style={{ padding: '12px 18px' }}>
+          <div className="nc-card" style={{ height: 120 }} />
+        </div>
+      </div>
+      {/* Backdrop */}
+      <div style={{
+        position: 'absolute', inset: 0, top: 0,
+        background: 'rgba(28,24,20,0.45)',
+      }} />
+
+      {/* Bottom sheet */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        background: 'var(--paper)',
+        borderTopLeftRadius: 22, borderTopRightRadius: 22,
+        padding: '12px 22px 36px',
+        boxShadow: '0 -20px 40px rgba(28,24,20,0.18)',
+        maxHeight: '78%',
+        overflowY: 'auto',
+      }}>
+        <div style={{ width: 38, height: 4, background: 'var(--rule)', borderRadius: 999, margin: '0 auto 18px' }} />
+
+        <div className="nc-eyebrow" style={{ marginBottom: 6 }}>Perfil del comprador</div>
+        <h2 style={{ fontFamily: 'var(--serif)', fontSize: 26, fontWeight: 500, margin: 0, lineHeight: 1.1 }}>
+          Cebadero El Roble<br/>
+          <em style={{ color: 'var(--terra)', fontWeight: 400, fontSize: 19 }}>le escribió por el lote NC-2401</em>
+        </h2>
+
+        {/* Buyer card */}
+        <div style={{
+          marginTop: 16, padding: 14,
+          background: 'var(--paper-card)', border: '1px solid var(--rule)',
+          borderRadius: 'var(--r-sm)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+            <div style={{
+              width: 38, height: 38, background: 'var(--terra-wash)', borderRadius: 'var(--r-sm)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: 14, color: 'var(--terra-deep)',
+            }}>ER</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: 'var(--serif)', fontSize: 16 }}>Cebadero El Roble</div>
+              <div className="nc-meta">Anzoátegui · El Tigre · cebador</div>
+            </div>
+            <NCEarTag>Verificado</NCEarTag>
+          </div>
+          <div className="nc-rule-soft" style={{ margin: '8px 0' }} />
+          <div className="nc-meta" style={{ color: 'var(--ink-3)' }}>
+            <span className="nc-num" style={{ color: 'var(--ink-1)' }}>34</span> contactos previos en NC ·
+            miembro desde <span className="nc-num">2024</span>
+          </div>
+        </div>
+
+        {/* Mensaje */}
+        <div style={{ marginTop: 14 }}>
+          <div className="nc-eyebrow" style={{ marginBottom: 6 }}>Mensaje del comprador</div>
+          <div style={{
+            padding: 12, background: 'var(--paper)', border: '1px dashed var(--rule)',
+            borderRadius: 'var(--r-sm)',
+            fontFamily: 'var(--serif)', fontSize: 15, fontStyle: 'italic', color: 'var(--ink-1)',
+          }}>
+            «Buenas don Eladio. Estamos interesados en el lote completo de Brahman. ¿Aceptaría flete propio? ¿Peso al embarque o en finca?»
+          </div>
+        </div>
+
+        {/* Lote referenced */}
+        <div style={{
+          marginTop: 12, padding: 10,
+          display: 'flex', gap: 10, alignItems: 'center',
+          background: 'var(--paper-card)', border: '1px solid var(--rule-soft)',
+          borderRadius: 'var(--r-sm)',
+        }}>
+          <NCPhoto height={42} label="" />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="nc-meta nc-num" style={{ color: 'var(--ink-3)' }}>NC-2401</div>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 14 }}>Levante · Brahman · 24 cab.</div>
+          </div>
+          <span className="nc-num" style={{ fontSize: 13, color: 'var(--terra-deep)' }}>USD 480/cab</span>
+        </div>
+
+        {/* CTAs — condicionales según freno */}
+        {showApprovalButtons ? (
+          <>
+            <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
+              <button className="nc-btn nc-btn--ghost" style={{ flex: 1 }} onClick={() => window.__nav('solicitudes')}>Rechazar</button>
+              <button className="nc-btn nc-btn--terra" style={{ flex: 1.5 }} onClick={() => { alert('Contacto compartido. Volviendo a su bandeja.'); window.__nav('solicitudes'); }}>
+                Aceptar y compartir contacto
+              </button>
+            </div>
+            <div className="nc-meta" style={{ marginTop: 10, textAlign: 'center', color: 'var(--ink-3)' }}>
+              Al aceptar, su número se compartirá sólo con este comprador.
+            </div>
+          </>
+        ) : (
+          <>
+            <button className="nc-btn nc-btn--wa" style={{ width: '100%', marginTop: 18, height: 48 }} onClick={() => alert('Abriría WhatsApp con este comprador.')}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 3.5C18.3 1.3 15.3 0 12 0 5.4 0 0 5.4 0 12c0 2.1.6 4.2 1.6 6L0 24l6.2-1.6c1.7.9 3.7 1.4 5.7 1.4 6.6 0 12-5.4 12-12 0-3.3-1.3-6.3-3.4-8.3z"/></svg>
+              Abrir WhatsApp con este comprador
+            </button>
+            <div className="nc-meta" style={{ marginTop: 10, textAlign: 'center', color: 'var(--ink-3)' }}>
+              Vista informacional. Active el freno en su perfil para requerir aprobación.
+            </div>
+          </>
+        )}
+      </div>
+    </NCScreen>
+  );
+}
+
+// Alias retrocompatible — ScreenAprobacion es el mismo perfil del comprador,
+// renderizado con los botones de aprobación para mostrar la rama “freno activo”.
+function ScreenAprobacion() {
+  return <ScreenPerfilComprador showApprovalButtons={true} />;
+}
+
+Object.assign(window, {
+  ScreenPerfilFinca, ScreenCrearPublicacion, ScreenSolicitudes,
+  ScreenAprobacion, ScreenPerfilComprador,
+  PreferenciasContactoCard, SegmentedControl,
+});
+
+  </script>
+
+  <!-- Admin screen -->
+  <script type="text/babel">
+// admin.jsx — Desktop admin panel (1440×900 frame)
+
+function ScreenAdmin() {
+  return (
+    <div data-screen-label="12 Panel administrativo · desktop" style={{
+      width: 1440, height: 900,
+      background: 'var(--paper-3)',
+      fontFamily: 'var(--sans)',
+      color: 'var(--ink)',
+      display: 'flex',
+      overflow: 'hidden',
+      borderRadius: 6,
+      border: '1px solid var(--rule)',
+    }}>
+      {/* SIDEBAR */}
+      <aside style={{
+        width: 232,
+        background: 'var(--ink)',
+        color: 'var(--paper)',
+        padding: '22px 0',
+        display: 'flex', flexDirection: 'column',
+      }}>
+        <div style={{ padding: '0 22px 18px', borderBottom: '1px solid rgba(244,236,219,0.12)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{
+              width: 26, height: 20, background: 'var(--terra)',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: 12,
+              color: 'var(--paper)', borderRadius: 2,
+            }}>nc</span>
+            <span className="nc-wordmark" style={{ fontSize: 17, color: 'var(--paper)' }}>novuscampo</span>
+          </div>
+          <div style={{ marginTop: 6, fontFamily: 'var(--mono)', fontSize: 9.5, color: 'rgba(244,236,219,0.5)', letterSpacing: 0.1, textTransform: 'uppercase' }}>
+            Panel administrativo · v0.1
+          </div>
+        </div>
+
+        <nav style={{ padding: '14px 12px', flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {[
+            ['Resumen', '◐', false],
+            ['Verificaciones', '✦', true, '14'],
+            ['Publicaciones', '▤', false],
+            ['Reportes', '⚑', false, '2'],
+            ['Métricas', '◌', false],
+            ['Bitácora', '▢', false],
+          ].map(([l, ico, on, n], i) => (
+            <a key={l} style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '9px 12px', borderRadius: 6,
+              background: on ? 'rgba(244,236,219,0.08)' : 'transparent',
+              color: on ? 'var(--paper)' : 'rgba(244,236,219,0.7)',
+              fontFamily: 'var(--sans)', fontSize: 13.5,
+              borderLeft: on ? '2px solid var(--terra)' : '2px solid transparent',
+              marginLeft: on ? -2 : 0,
+              cursor: 'pointer',
+            }}>
+              <span style={{ width: 14, textAlign: 'center', opacity: 0.75 }}>{ico}</span>
+              <span style={{ flex: 1 }}>{l}</span>
+              {n && <span style={{
+                fontFamily: 'var(--mono)', fontSize: 10,
+                background: on ? 'var(--terra)' : 'rgba(244,236,219,0.12)',
+                color: on ? 'var(--paper)' : 'rgba(244,236,219,0.7)',
+                padding: '2px 6px', borderRadius: 999,
+              }}>{n}</span>}
+            </a>
+          ))}
+        </nav>
+
+        {/* Bottom: admin user */}
+        <div style={{ padding: '12px 14px', borderTop: '1px solid rgba(244,236,219,0.12)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              width: 30, height: 30, borderRadius: 999,
+              background: 'var(--terra-wash)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: 13, color: 'var(--terra-deep)',
+            }}>MR</div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ fontSize: 12.5, color: 'var(--paper)' }}>María Rangel</div>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, color: 'rgba(244,236,219,0.5)' }}>admin · ofc. Caracas</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* MAIN */}
+      <main style={{ flex: 1, padding: '0', overflow: 'hidden', display: 'flex', flexDirection: 'column', background: 'var(--paper)' }}>
+        {/* Top bar */}
+        <header style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '20px 30px',
+          borderBottom: '1px solid var(--rule)',
+        }}>
+          <div>
+            <div className="nc-eyebrow">Cola de verificaciones · jueves 14 de mayo</div>
+            <h1 style={{ fontFamily: 'var(--serif)', fontSize: 30, fontWeight: 500, margin: '4px 0 0' }}>
+              Identidades pendientes de revisar
+            </h1>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              background: 'var(--paper-card)', border: '1px solid var(--rule)',
+              borderRadius: 6, padding: '0 12px', height: 36, width: 280,
+            }}>
+              <svg width="14" height="14" viewBox="0 0 14 14"><circle cx="6" cy="6" r="4" stroke="var(--ink-2)" strokeWidth="1.5" fill="none"/><path d="M9 9l4 4" stroke="var(--ink-2)" strokeWidth="1.5" strokeLinecap="round"/></svg>
+              <input placeholder="Buscar por nombre, cédula, ID de lote…" style={{
+                flex: 1, border: 'none', background: 'transparent', outline: 'none',
+                fontFamily: 'var(--sans)', fontSize: 13, color: 'var(--ink)',
+              }} />
+              <span className="nc-meta" style={{ color: 'var(--ink-3)' }}>⌘K</span>
+            </div>
+            <button className="nc-btn nc-btn--ghost" style={{ height: 36, fontSize: 13 }}>Exportar CSV</button>
+            <button className="nc-btn" style={{ height: 36, fontSize: 13 }}>Nueva acción</button>
+          </div>
+        </header>
+
+        {/* Stats strip */}
+        <section style={{
+          display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)',
+          padding: '20px 30px', gap: 16,
+          borderBottom: '1px solid var(--rule-soft)',
+        }}>
+          {[
+            ['Productores verificados', '684', '+ 12 sem.', 'var(--terra)'],
+            ['Compradores verificados', '1.803', '+ 28 sem.', 'var(--ink)'],
+            ['Publicaciones activas', '84', '+ 9 sem.', 'var(--ink)'],
+            ['Contactos (mes)', '142', '+ 22 vs. mes ant.', 'var(--olive)'],
+            ['Productores que publicaron 2x+', '23', 'retención oferta', 'var(--amber)'],
+          ].map(([l, v, d, c], i) => (
+            <div key={l} style={{
+              padding: '14px 16px',
+              background: 'var(--paper-card)',
+              border: '1px solid var(--rule-soft)',
+              borderRadius: 6,
+            }}>
+              <div className="nc-eyebrow" style={{ fontSize: 9.5 }}>{l}</div>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 26, fontWeight: 500, color: c, marginTop: 4, fontFeatureSettings: '"tnum"' }}>{v}</div>
+              <div className="nc-meta" style={{ color: 'var(--ink-3)', marginTop: 2 }}>{d}</div>
+            </div>
+          ))}
+        </section>
+
+        {/* Tabs + table */}
+        <section style={{ flex: 1, display: 'grid', gridTemplateColumns: '1.55fr 1fr', overflow: 'hidden' }}>
+          {/* Left: pending users + listings */}
+          <div style={{ borderRight: '1px solid var(--rule)', overflow: 'auto' }}>
+            <div style={{
+              display: 'flex', gap: 4, padding: '14px 30px 0', borderBottom: '1px solid var(--rule)',
+            }}>
+              {[
+                ['Verificaciones pendientes', 14, true],
+                ['Recién aprobadas', 6, false],
+                ['Rechazadas', 2, false],
+              ].map(([l, n, on]) => (
+                <button key={l} style={{
+                  padding: '8px 14px',
+                  background: 'transparent', border: 'none',
+                  borderBottom: '2px solid ' + (on ? 'var(--terra)' : 'transparent'),
+                  cursor: 'pointer',
+                  fontFamily: 'var(--sans)', fontSize: 13,
+                  color: on ? 'var(--ink)' : 'var(--ink-2)',
+                  fontWeight: on ? 600 : 400,
+                  marginBottom: -1,
+                  display: 'flex', alignItems: 'center', gap: 6,
+                }}>
+                  {l}
+                  <span className="nc-num" style={{
+                    fontSize: 10,
+                    background: on ? 'var(--terra)' : 'var(--paper-2)',
+                    color: on ? 'var(--paper)' : 'var(--ink-2)',
+                    padding: '1px 6px', borderRadius: 999,
+                  }}>{n}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Table */}
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'var(--sans)' }}>
+              <thead>
+                <tr style={{ background: 'var(--paper-card)' }}>
+                  {['', 'Solicitante', 'Rol', 'Región', 'Documentos', 'En espera', 'Riesgo'].map((h, i) => (
+                    <th key={i} style={{
+                      textAlign: 'left',
+                      padding: '10px 14px',
+                      fontFamily: 'var(--mono)', fontSize: 9.5, letterSpacing: 0.12,
+                      textTransform: 'uppercase', color: 'var(--ink-2)',
+                      borderBottom: '1px solid var(--rule)',
+                      whiteSpace: 'nowrap',
+                    }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { n: 'Hato La Esperanza', r: 'Productor', loc: 'Barinas · Sabaneta', docs: ['cédula', 'selfie', 'foto finca'], t: 'hace 12 min', risk: 'low' },
+                  { n: 'Genética Llanera C.A.', r: 'Productor', loc: 'Guárico · Calabozo', docs: ['cédula', 'selfie'], t: 'hace 1 h', risk: 'low' },
+                  { n: 'Manuel Pacheco', r: 'Comprador', loc: 'Caracas', docs: ['cédula', 'selfie'], t: 'hace 2 h', risk: 'med' },
+                  { n: 'Fundo Los Mangos', r: 'Productor', loc: 'Cojedes · El Baúl', docs: ['cédula', 'selfie', 'foto finca'], t: 'hace 3 h', risk: 'low' },
+                  { n: 'Inversiones El Toro', r: 'Comprador', loc: 'Sin verificar', docs: ['cédula'], t: 'hace 5 h', risk: 'high' },
+                  { n: 'Carmen Lugo de Pérez', r: 'Productor', loc: 'Apure · Biruaca', docs: ['cédula', 'selfie', 'foto finca'], t: 'hace 8 h', risk: 'low' },
+                ].map((u, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid var(--rule-soft)' }}>
+                    <td style={{ padding: '12px 14px' }}>
+                      <input type="checkbox" defaultChecked={i === 0} style={{ accentColor: 'var(--terra)' }} />
+                    </td>
+                    <td style={{ padding: '12px 14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{
+                          width: 30, height: 30, background: 'var(--paper-2)', borderRadius: 4,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: 13, color: 'var(--ink-1)',
+                        }}>{u.n.split(' ').map(w => w[0]).slice(0, 2).join('')}</div>
+                        <div>
+                          <div style={{ fontFamily: 'var(--serif)', fontSize: 14, color: 'var(--ink)' }}>{u.n}</div>
+                          <div className="nc-meta" style={{ color: 'var(--ink-3)' }}>identidad pendiente</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ padding: '12px 14px' }}>
+                      <span className="nc-tag">{u.r}</span>
+                    </td>
+                    <td style={{ padding: '12px 14px', fontSize: 13 }}>{u.loc}</td>
+                    <td style={{ padding: '12px 14px' }}>
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        {u.docs.map((d, j) => (
+                          <span key={j} style={{
+                            display: 'inline-flex', alignItems: 'center',
+                            padding: '2px 7px',
+                            background: 'var(--paper-2)',
+                            border: '1px solid var(--rule)',
+                            borderRadius: 3,
+                            fontFamily: 'var(--mono)', fontSize: 9.5, letterSpacing: 0.05,
+                            color: 'var(--ink-2)', textTransform: 'uppercase',
+                          }}>{d}</span>
+                        ))}
+                      </div>
+                    </td>
+                    <td style={{ padding: '12px 14px', fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-2)' }}>{u.t}</td>
+                    <td style={{ padding: '12px 14px' }}>
+                      <RiskDot r={u.risk} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* Bulk action bar */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '14px 30px',
+              borderTop: '1px solid var(--rule)',
+              background: 'var(--paper-card)',
+              fontSize: 13,
+            }}>
+              <span className="nc-meta">
+                <span className="nc-num" style={{ color: 'var(--ink)' }}>1</span> de <span className="nc-num">14</span> seleccionado
+              </span>
+              <div style={{ flex: 1 }} />
+              <button className="nc-btn nc-btn--ghost" style={{ height: 32, fontSize: 12 }}>Rechazar con motivo</button>
+              <button className="nc-btn nc-btn--ghost" style={{ height: 32, fontSize: 12 }}>Pedir más datos</button>
+              <button style={{
+                height: 32, padding: '0 14px', background: 'var(--olive)',
+                color: 'var(--paper)', border: 'none', borderRadius: 6,
+                fontFamily: 'var(--sans)', fontSize: 12, fontWeight: 500, cursor: 'pointer',
+              }}>Aprobar seleccionados</button>
+            </div>
+          </div>
+
+          {/* Right: reported publications */}
+          <aside style={{ overflow: 'auto', padding: 0 }}>
+            <div style={{
+              padding: '14px 24px', borderBottom: '1px solid var(--rule)',
+              background: 'var(--paper-card)',
+              display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+            }}>
+              <div className="nc-eyebrow">Publicaciones reportadas</div>
+              <span className="nc-meta" style={{ color: 'var(--ink-3)' }}>
+                <span className="nc-num" style={{ color: 'var(--ink)' }}>2</span> abiertas
+              </span>
+            </div>
+
+            <div style={{ padding: '14px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {[
+                {
+                  id: 'NC-2398', n: 'Pie de cría · Brahman', who: 'Fundo San Cristóbal',
+                  motivo: 'Precio sospechoso — muy por debajo de mercado',
+                  reporters: 3, time: 'hace 4 h', state: 'open',
+                },
+                {
+                  id: 'NC-2412', n: 'Engorde · F1', who: 'Hacienda El Encanto',
+                  motivo: 'Fotos posiblemente reutilizadas de otro lote',
+                  reporters: 2, time: 'hace 1 d', state: 'review',
+                },
+              ].map((r) => (
+                <div key={r.id} className="nc-card" style={{ padding: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <NCPhoto height={48} label="" />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span className="nc-meta nc-num" style={{ color: 'var(--ink-3)' }}>{r.id}</span>
+                        <span style={{
+                          fontFamily: 'var(--mono)', fontSize: 9.5,
+                          color: r.state === 'open' ? 'var(--crimson)' : 'var(--amber)',
+                          textTransform: 'uppercase', letterSpacing: 0.05,
+                        }}>· {r.state === 'open' ? 'abierto' : 'en revisión'}</span>
+                      </div>
+                      <div style={{ fontFamily: 'var(--serif)', fontSize: 14, marginTop: 2 }}>{r.n}</div>
+                      <div className="nc-meta" style={{ marginTop: 2, color: 'var(--ink-3)' }}>{r.who} · {r.time}</div>
+                    </div>
+                  </div>
+                  <div style={{
+                    marginTop: 10, padding: '8px 10px',
+                    background: 'var(--paper)', border: '1px dashed var(--rule)',
+                    borderRadius: 4,
+                    fontFamily: 'var(--sans)', fontSize: 12.5, color: 'var(--ink-1)',
+                    lineHeight: 1.45,
+                  }}>
+                    <span className="nc-meta" style={{ color: 'var(--ink-3)' }}>Motivo · {r.reporters} reportes</span>
+                    <div style={{ marginTop: 2 }}>{r.motivo}</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+                    <button className="nc-btn nc-btn--ghost" style={{ flex: 1, height: 32, fontSize: 12 }}>Desestimar</button>
+                    <button style={{
+                      flex: 1, height: 32, padding: '0 10px',
+                      background: 'var(--ink)', color: 'var(--paper)',
+                      border: 'none', borderRadius: 6,
+                      fontFamily: 'var(--sans)', fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                    }}>Revisar</button>
+                  </div>
+                </div>
+              ))}
+
+              <div style={{
+                marginTop: 4, padding: 12,
+                background: 'var(--paper-card)',
+                border: '1px dashed var(--rule)', borderRadius: 6,
+              }}>
+                <div className="nc-eyebrow">Validación del MVP</div>
+                <p className="nc-body" style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--ink-2)' }}>
+                  Métrica clave — productores que publicaron 2 veces o más: <span className="nc-num" style={{ color: 'var(--terra-deep)', fontWeight: 600 }}>23</span> de 84.
+                  Es la señal más honesta de retención del lado oferta.
+                </p>
+              </div>
+            </div>
+          </aside>
+        </section>
+      </main>
+    </div>
+  );
+}
+
+function RiskDot({ r }) {
+  const map = {
+    low: { l: 'Bajo', c: 'var(--olive)' },
+    med: { l: 'Medio', c: 'var(--amber)' },
+    high: { l: 'Alto', c: 'var(--crimson)' },
+  };
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 6,
+      fontFamily: 'var(--mono)', fontSize: 10.5, color: map[r].c,
+      textTransform: 'uppercase', letterSpacing: 0.1,
+    }}>
+      <span style={{ width: 7, height: 7, borderRadius: 999, background: map[r].c, display: 'inline-block' }} />
+      {map[r].l}
+    </span>
+  );
+}
+
+Object.assign(window, { ScreenAdmin });
+
+  </script>
+
+  <!-- Router + App entry -->
+  <script type="text/babel">
+    // Stub IOSDevice used by NCScreen — replace the bundler's version
+    function IOSDevice({ width = 390, height = 844, children }) {
+      return (
+        <div style={{
+          width: width, height: height,
+          position: 'relative', overflow: 'hidden',
+          background: 'var(--paper)',
+        }}>
+          {children}
+        </div>
+      );
+    }
+    window.IOSDevice = IOSDevice;
+
+    // Map of screen id → { component, label, section, isDesktop }
+    const SCREENS = [
+      { id: 'splash',       label: 'Splash',                num: '01', section: 'Onboarding',     fn: () => <ScreenSplash /> },
+      { id: 'registro',     label: 'Registro',              num: '02', section: 'Onboarding',     fn: () => <ScreenRegistro /> },
+      { id: 'verificacion', label: 'Verificación',          num: '03', section: 'Onboarding',     fn: () => <ScreenVerificacion /> },
+      { id: 'home',         label: 'Mercado',               num: '04', section: 'Flujo comprador', fn: () => <ScreenHome density="grid" verified={true} /> },
+      { id: 'filtros',      label: 'Filtros',               num: '05', section: 'Flujo comprador', fn: () => <ScreenFiltros /> },
+      { id: 'detalle',      label: 'Detalle del lote',      num: '06', section: 'Flujo comprador', fn: () => <ScreenDetalle /> },
+      { id: 'pre-contacto', label: 'Pre-contacto WhatsApp', num: '07', section: 'Flujo comprador', fn: () => <ScreenPreContactoWhatsApp /> },
+      { id: 'perfil-finca', label: 'Perfil de finca',       num: '08', section: 'Flujo productor', fn: () => <ScreenPerfilFinca /> },
+      { id: 'crear',        label: 'Crear publicación',     num: '09', section: 'Flujo productor', fn: () => <ScreenCrearPublicacion /> },
+      { id: 'solicitudes',  label: 'Bandeja de contactos',  num: '10', section: 'Flujo productor', fn: () => <ScreenSolicitudes /> },
+      { id: 'aprobacion',   label: 'Perfil del comprador',  num: '11', section: 'Flujo productor', fn: () => <ScreenAprobacion /> },
+      { id: 'admin',        label: 'Panel admin',           num: '12', section: 'Administración',  fn: () => <ScreenAdmin />, isDesktop: true },
+    ];
+
+    function DemoNavigator({ current, onNavigate }) {
+      const sections = [...new Set(SCREENS.map(s => s.section))];
+      return (
+        <aside className="proto-nav">
+          <div className="proto-nav-header">
+            <div className="proto-nav-brand">
+              <span className="proto-nav-mark">nc</span>
+              <span>novuscampo</span>
+            </div>
+            <div className="proto-nav-sub">Prototipo navegable · v0.2</div>
+          </div>
+
+          {sections.map(sec => (
+            <div key={sec}>
+              <div className="proto-nav-section">{sec}</div>
+              {SCREENS.filter(s => s.section === sec).map(s => (
+                <div
+                  key={s.id}
+                  className={'proto-nav-item' + (s.id === current ? ' active' : '')}
+                  onClick={() => onNavigate(s.id)}
+                >
+                  <span className="proto-nav-item-num">{s.num}</span>
+                  <span>{s.label}</span>
+                </div>
+              ))}
+            </div>
+          ))}
+
+          <div className="proto-nav-footer">
+            Use el menú lateral para saltar entre pantallas, o los botones dentro del prototipo para navegar como un usuario real.
+            <br/><br/>
+            Los botones de WhatsApp muestran un mensaje en lugar de abrir la app.
+          </div>
+        </aside>
+      );
+    }
+
+    function App() {
+      const [screen, setScreen] = React.useState('splash');
+      const [history, setHistory] = React.useState([]);
+
+      // Expose navigation globally for buttons inside the screens
+      React.useEffect(() => {
+        window.__nav = (s) => {
+          if (!SCREENS.find(x => x.id === s)) {
+            console.warn('Unknown screen:', s);
+            return;
+          }
+          setHistory(h => [...h, screen]);
+          setScreen(s);
+        };
+        window.__back = () => {
+          setHistory(h => {
+            if (h.length === 0) {
+              setScreen('splash');
+              return [];
+            }
+            const last = h[h.length - 1];
+            setScreen(last);
+            return h.slice(0, -1);
+          });
+        };
+      }, [screen]);
+
+      const current = SCREENS.find(s => s.id === screen);
+      const stageHint = history.length > 0
+        ? `← desde ${SCREENS.find(s => s.id === history[history.length - 1])?.label || 'inicio'}`
+        : 'pantalla inicial';
+
+      return (
+        <div className="proto-layout">
+          <DemoNavigator current={screen} onNavigate={(s) => { setScreen(s); setHistory([]); }} />
+          <div className="proto-stage">
+            <div className="proto-stage-header">
+              <div>
+                <div className="proto-stage-label">{current.section}</div>
+                <div className="proto-stage-title">{current.num} · {current.label}</div>
+              </div>
+              <div className="proto-hint">{stageHint}</div>
+            </div>
+
+            {current.isDesktop ? (
+              <div className="proto-desktop">
+                {current.fn()}
+              </div>
+            ) : (
+              <div className="proto-phone">
+                <div className="proto-phone-inner">
+                  {current.fn()}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
