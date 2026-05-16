@@ -371,11 +371,6 @@
     .proto-ctrl:active:not(:disabled) { transform: translateY(1px); }
     .proto-ctrl:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    @media (max-width: 480px) {
-      .proto-user-controls { top: 14px; right: 12px; gap: 6px; }
-      .proto-ctrl { height: 32px; padding: 0 10px; font-size: 11.5px; }
-    }
-
     /* User mode — clean app experience (no chrome) */
     .proto-user-mode {
       width: 100%;
@@ -400,16 +395,78 @@
       background: #000; border-radius: 16px;
       z-index: 100;
     }
-    /* On mobile, fill the screen with the app (no frame chrome) */
+
+    /* ===== MOBILE FIXES ===== */
+    /* On phones, kill body scroll, fix viewport, allow only .nc-screen to scroll. */
     @media (max-width: 480px) {
-      .proto-user-mode { background: var(--paper); padding: 0; }
+      html, body {
+        height: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
+      #root {
+        height: 100%;
+        overflow: hidden;
+      }
+
+      .proto-user-mode {
+        background: var(--paper);
+        padding: 0;
+        min-height: 100dvh;
+        height: 100dvh;
+        display: block;
+      }
       .proto-user-phone {
-        width: 100vw; height: 100vh;
-        border-radius: 0; border: none;
+        width: 100vw;
+        height: 100dvh;
+        border-radius: 0;
+        border: none;
         box-shadow: none;
       }
       .proto-user-phone::before { display: none; }
+
+      /* Floating controls: top-right with safe-area for notch/status bar */
+      .proto-user-controls {
+        position: fixed;
+        top: calc(env(safe-area-inset-top, 0px) + 10px);
+        right: 12px;
+        bottom: auto; left: auto;
+        gap: 6px;
+        z-index: 200;
+      }
+      .proto-ctrl {
+        height: 36px;
+        padding: 0 12px;
+        font-size: 12px;
+        background: rgba(28,24,20,0.88);
+        color: #f4ecdb;
+        border-color: rgba(244,236,219,0.2);
+      }
+      .proto-ctrl:hover:not(:disabled) { background: rgba(28,24,20,1); }
+
+      /* Make the scrollable screen actually scroll smoothly on mobile */
+      .nc-screen {
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+      }
+
+      /* Sticky CTAs at the bottom of screens need extra padding for the
+         safe-area (gesture bar) AND so the last bit of scroll content
+         doesn't get hidden under them. */
+      .nc-screen > div[style*="position: absolute"][style*="bottom: 0"] {
+        padding-bottom: calc(20px + env(safe-area-inset-bottom, 16px)) !important;
+      }
+
+      /* Ensure the screen content has room below the sticky CTA */
+      .nc-screen {
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
     }
+
+        /* Hide design tweaks panel from the original — we don't use it */
+    .nc-tweaks-panel { display: none !important; }
+
+
 
     @media (max-width: 900px) {
       .proto-layout { grid-template-columns: 1fr; }
@@ -2479,10 +2536,12 @@ Object.assign(window, { ScreenAdmin });
   <!-- Router + App entry -->
   <script type="text/babel">
     // Stub IOSDevice used by NCScreen — replace the bundler's version
-    function IOSDevice({ width = 390, height = 844, children }) {
+    function IOSDevice({ children }) {
+      // Always fill the parent container. The parent
+      // (.proto-phone or .proto-user-phone) sets the actual size.
       return (
         <div style={{
-          width: width, height: height,
+          width: '100%', height: '100%',
           position: 'relative', overflow: 'hidden',
           background: 'var(--paper)',
         }}>
