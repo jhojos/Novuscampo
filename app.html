@@ -95,8 +95,7 @@
 .nc-screen * { scrollbar-width: none; }
 
 .nc-h1 { font-family: var(--serif); font-weight: 500; font-size: 32px; line-height: 1.05; letter-spacing: -0.01em; color: var(--ink); }
-.nc-h2 { font-family: var(--serif); font-weight: 500; font-size: 24px; line-height: 1.1; letter-spacing: -0.005em; }
-.nc-h3 { font-family: var(--serif); font-weight: 500; font-size: 18px; line-height: 1.2; }
+
 .nc-eyebrow {
   font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
   text-transform: uppercase; color: var(--ink-2);
@@ -105,7 +104,6 @@
 .nc-meta { font-family: var(--mono); font-size: 11px; color: var(--ink-2); letter-spacing: 0.02em; }
 .nc-num  { font-family: var(--mono); font-feature-settings: "tnum"; }
 
-.nc-rule { height: 1px; background: var(--rule); width: 100%; }
 .nc-rule-soft { height: 1px; background: var(--rule-soft); width: 100%; }
 
 .nc-btn {
@@ -131,8 +129,6 @@
 }
 .nc-chip--active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 .nc-chip--terra { background: var(--terra-wash); color: var(--terra-deep); border-color: var(--terra-tint); }
-.nc-chip--olive { background: var(--olive-wash); color: var(--olive); border-color: var(--olive); }
-.nc-chip--amber { background: var(--amber-wash); color: var(--amber); border-color: var(--amber); }
 
 .nc-tag {
   font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.1em;
@@ -171,16 +167,6 @@
   text-transform: uppercase; color: var(--olive);
   padding: 3px 6px; border: 1px solid var(--olive);
   border-radius: var(--r-xs); line-height: 1; background: transparent;
-}
-
-/* Newsprint texture for hero backgrounds */
-.nc-newsprint {
-  background-color: var(--paper);
-  background-image:
-    radial-gradient(rgba(28,24,20,0.045) 1px, transparent 1px),
-    radial-gradient(rgba(28,24,20,0.035) 1px, transparent 1px);
-  background-size: 3px 3px, 7px 7px;
-  background-position: 0 0, 2px 2px;
 }
 
 /* Placeholder image — diagonal stripes */
@@ -343,8 +329,6 @@
     }
 
     /* Hide design tweaks panel from the original — we don't use it */
-    .nc-tweaks-panel { display: none !important; }
-
 
 
     /* User mode floating controls (back + restart) */
@@ -448,6 +432,7 @@
       .nc-screen {
         -webkit-overflow-scrolling: touch;
         overscroll-behavior: contain;
+        padding-bottom: calc(120px + env(safe-area-inset-bottom, 12px)) !important;
       }
 
       /* Sticky CTAs at the bottom of screens need extra padding for the
@@ -464,8 +449,6 @@
     }
 
         /* Hide design tweaks panel from the original — we don't use it */
-    .nc-tweaks-panel { display: none !important; }
-
 
 
     @media (max-width: 900px) {
@@ -495,7 +478,7 @@
 
   <!-- Shared shell components -->
   <script type="text/babel">
-// shell.jsx — shared mobile chrome (top bar, bottom tab bar, placeholder photo)
+// shell.jsx — Componentes compartidos: NCTopBar, NCBottomTab, NCPhoto, NCScreen, NCEarTag
 
 function NCTopBar({ title, subtitle, back = true, action }) {
   return (
@@ -607,7 +590,9 @@ function NCPhoto({ height = 160, width, label = 'foto ganado', tag, dark }) {
 function NCScreen({ children, tab, noTab, label }) {
   return (
     <IOSDevice width={390} height={844}>
-      <div className="nc-screen" data-screen-label={label} style={{ paddingBottom: noTab ? 0 : 84 }}>
+      <div className="nc-screen" data-screen-label={label} style={{
+        paddingBottom: noTab ? 'env(safe-area-inset-bottom, 0px)' : 'calc(110px + env(safe-area-inset-bottom, 0px))'
+      }}>
         {children}
       </div>
       {!noTab && <NCBottomTab active={tab} />}
@@ -624,7 +609,6 @@ function NCEarTag({ children = 'Verificado' }) {
     </span>
   );
 }
-
 
 // TrustNotches — visual representation of confidence level (0-5)
 function TrustNotches({ level = 0, max = 5, label, size = 'sm' }) {
@@ -663,7 +647,7 @@ Object.assign(window, { NCTopBar, NCBottomTab, NCPhoto, NCScreen, NCEarTag, Trus
 
   <!-- Brand system (NCMark, NCWordmark) -->
   <script type="text/babel">
-// brand.jsx — Brand system overview card (logo, type, color)
+// brand.jsx — Marca: NCMark, NCWordmark, TrustNotches, VerifBadge
 
 function NCMark({ size = 28 }) {
   return (
@@ -681,10 +665,10 @@ function NCMark({ size = 28 }) {
   );
 }
 
-function NCWordmark({ size = 22, color }) {
+function NCWordmark({ size = 22, color, markless = false }) {
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: size * 0.4 }}>
-      <NCMark size={size} />
+      {!markless && <NCMark size={size} />}
       <span className="nc-wordmark" style={{ fontSize: size * 1.05, color: color || 'var(--ink)' }}>
         novuscampo
       </span>
@@ -693,8 +677,27 @@ function NCWordmark({ size = 22, color }) {
 }
 
 
+// VerifBadge — chip de verificación con checkmark (verde por default, ámbar para warning)
+function VerifBadge({ children, variant = 'ok' }) {
+  const colors = variant === 'warn'
+    ? { bg: 'var(--amber-wash)', fg: 'var(--amber)' }
+    : { bg: 'var(--olive-wash)', fg: 'var(--olive)' };
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 3,
+      fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: 0.04, fontWeight: 600,
+      padding: '2px 7px', borderRadius: 999,
+      background: colors.bg, color: colors.fg,
+    }}>
+      {variant === 'ok' && (
+        <svg width="8" height="8" viewBox="0 0 10 10"><path d="M1 5l3 3 5-6" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round"/></svg>
+      )}
+      {children}
+    </span>
+  );
+}
 
-Object.assign(window, { NCMark, NCWordmark });
+Object.assign(window, { NCMark, NCWordmark, VerifBadge });
 
   </script>
 
@@ -948,7 +951,7 @@ Object.assign(window, { ScreenSplash, ScreenRegistro, ScreenVerificacion, Verifi
 
   <!-- Buyer screens -->
   <script type="text/babel">
-// buyer.jsx — Home (mercado), Filtros, Detalle publicación, Éxito WhatsApp
+// buyer.jsx — Comprador: Mercado, Filtros, Detalle, Solicitar contacto
 
 const LISTINGS = [
   {
@@ -1492,7 +1495,7 @@ Object.assign(window, { ScreenHome, ScreenFiltros, ScreenDetalle, ScreenPreConta
 
   <!-- Producer screens -->
   <script type="text/babel">
-// producer.jsx — Perfil finca, Crear publicación (2 pasos), Bandeja solicitudes, Aprobación
+// producer.jsx — Productor: Perfil de Finca, Crear publicación, Solicitudes, Aprobación
 
 // PERFIL DE FINCA
 function ScreenPerfilFinca() {
@@ -2135,38 +2138,9 @@ function ScreenSolicitudes() {
                 </div>
                 {/* Verification badges */}
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 6 }}>
-                  {r.verified && (
-                    <span style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 3,
-                      fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: 0.04,
-                      padding: '2px 7px', borderRadius: 999,
-                      background: 'var(--olive-wash)', color: 'var(--olive)', fontWeight: 600,
-                    }}>
-                      <svg width="8" height="8" viewBox="0 0 10 10"><path d="M1 5l3 3 5-6" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round"/></svg>
-                      WhatsApp
-                    </span>
-                  )}
-                  {r.identity && (
-                    <span style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 3,
-                      fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: 0.04,
-                      padding: '2px 7px', borderRadius: 999,
-                      background: 'var(--olive-wash)', color: 'var(--olive)', fontWeight: 600,
-                    }}>
-                      <svg width="8" height="8" viewBox="0 0 10 10"><path d="M1 5l3 3 5-6" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round"/></svg>
-                      Identidad
-                    </span>
-                  )}
-                  {!r.verified && (
-                    <span style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 3,
-                      fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: 0.04,
-                      padding: '2px 7px', borderRadius: 999,
-                      background: 'var(--amber-wash)', color: 'var(--amber)', fontWeight: 600,
-                    }}>
-                      Sin verificar
-                    </span>
-                  )}
+                  {r.verified && <VerifBadge>WhatsApp</VerifBadge>}
+                  {r.identity && <VerifBadge>Identidad</VerifBadge>}
+                  {!r.verified && <VerifBadge variant="warn">Sin verificar</VerifBadge>}
                 </div>
               </div>
             </div>
@@ -2227,7 +2201,6 @@ function ScreenSolicitudes() {
     </NCScreen>
   );
 }
-
 
 // PERFIL COMPRADOR — informacional (con freno opcional, no por defecto)
 function ScreenPerfilComprador({ showApprovalButtons = false } = {}) {
@@ -2756,6 +2729,9 @@ Object.assign(window, { ScreenAdmin });
     window.IOSDevice = IOSDevice;
 
     // Map of screen id → { component, label, section, isDesktop }
+    // SCREENS — registro maestro de pantallas del prototipo.
+
+    // id se usa con window.__nav(id); section agrupa en sidebar de demo mode.
     const SCREENS = [
       { id: 'splash',       label: 'Splash',                num: '01', section: 'Onboarding',     fn: () => <ScreenSplash /> },
       { id: 'registro',     label: 'Registro',              num: '02', section: 'Onboarding',     fn: () => <ScreenRegistro /> },
